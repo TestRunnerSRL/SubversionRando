@@ -19,7 +19,7 @@ import fillSpeedrun
 import areaRando
 from romWriter import RomWriter
 from solver import solve
-
+from goal import GenerateGoals
 
 def commandLineArgs(sys_args: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -119,7 +119,7 @@ def Main(argv: list[str], romWriter: Optional[RomWriter] = None) -> None:
     random.seed(seeeed)
     rom_name = f"Sub{logicChoice}{fillChoice}{areaA}{seeeed}.sfc"
     rom1_path = f"roms/{rom_name}"
-    rom_clean_path = "roms/Subversion12.sfc"
+    rom_clean_path = "roms/Subversion12new.sfc"
     # you must include Subversion 1.2 in your roms folder with this name^
 
     csvdict = pullCSV()
@@ -187,12 +187,15 @@ def Main(argv: list[str], romWriter: Optional[RomWriter] = None) -> None:
     romWriter.writeBytes(0x16ed0, b"\x24")  # adjust earlier branch to go +6 bytes later to rts
     romWriter.writeBytes(0x16ed8, b"\x1c")  # adjust earlier branch to go +6 bytes later to rts
     # disable demos (asm opcode edit). because the demos show items
-    romWriter.writeBytes(0x59f29, b"\xad")
+    #romWriter.writeBytes(0x59f29, b"\xad")
     # make always flashing doors out of vanilla gray 'animals saved' doors:
     #   edit in function $84:BE30 'gray door pre: go to link instruction if critters escaped',
     #   which is vanilla and probably not used anyway
     #   use by writing 0x18 to the high byte of a gray door plm param, OR'ed with the low bit of the 9-low-bits id part
     romWriter.writeBytes(0x23e33, b"\x38\x38\x38\x38")  # set the carry bit (a lot)
+
+    GenerateGoals(romWriter, 4)
+
     romWriter.finalizeRom()
     print("Done!")
     print(f"Filename is {rom_name}")
