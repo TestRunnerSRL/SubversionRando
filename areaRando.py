@@ -33,7 +33,7 @@ from romWriter import RomWriter
     Missile, Super, PowerBomb, Morph, GravityBoots, Speedball, Bombs, HiJump,
     GravitySuit, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
     MetroidSuit, Plasma, Screw, Hypercharge, Charge, Xray, SpaceJump, Energy,
-    Refuel, SmallAmmo, LargeAmmo, DamageAmp, ChargeAmp, SpaceJumpBoost,
+    Refuel, SmallAmmo, LargeAmmo, DamageAmp, AccelCharge, SpaceJumpBoost,
     spaceDrop
 ) = items_unpackable
 
@@ -182,9 +182,9 @@ def RandomizeAreas() -> list[tuple[AreaDoor, AreaDoor]]:
                 OpenNodesL.remove(randomNode)
                 # Now add the area to the visitedareas
                 # and all nodes from that area
-                VisitedAreas = VisitedAreas+[selectedDoor[2]]
+                VisitedAreas = VisitedAreas+[selectedDoor.area_name]
                 for doorSearch in RightSideDoorsList :
-                    if doorSearch[2] in VisitedAreas :
+                    if doorSearch.area_name in VisitedAreas :
                         OpenNodesR += [doorSearch]
                 for doorClean in OpenNodesR :
                     if doorClean in RightSideDoorsList :
@@ -202,9 +202,9 @@ def RandomizeAreas() -> list[tuple[AreaDoor, AreaDoor]]:
                 OpenNodesR.remove(randomNode)
                 # Now add the area to the visitedareas
                 # and all nodes from that area
-                VisitedAreas = VisitedAreas + [selectedDoor[2]]  # add the area string
+                VisitedAreas = VisitedAreas + [selectedDoor.area_name]  # add the area string
                 for doorSearch in LeftSideDoorsList :
-                    if doorSearch[2] in VisitedAreas :
+                    if doorSearch.area_name in VisitedAreas :
                         OpenNodesL += [doorSearch]
                 for doorClean in OpenNodesL :
                     if doorClean in LeftSideDoorsList :
@@ -269,13 +269,7 @@ def write_area_doors(Connections: list[tuple[AreaDoor, AreaDoor]], romWriter : R
     for pair in Connections :
         node1 = pair[0]
         node2 = pair[1]
-        # place data for node1 sending
-        romWriter.writeBytes(int(node1[0], 16), int(node2[1], 16).to_bytes(12, 'big'))
-        # place data for node2 sending
-        romWriter.writeBytes(int(node2[0], 16), int(node1[1], 16).to_bytes(12, 'big'))
-        if node1[4] != node2[4] :
-            romWriter.writeBytes(int(node1[0], 16)+2, b"\x40")
-            romWriter.writeBytes(int(node2[0], 16)+2, b"\x40")
+        romWriter.connect_doors(node1, node2)
 
     # Area rando done?
 

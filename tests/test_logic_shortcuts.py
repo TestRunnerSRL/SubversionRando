@@ -2,7 +2,8 @@
 import sys
 from pathlib import Path
 import pytest
-from game import Game
+from game import Game, GameOptions
+from trick import Trick
 
 file = Path(__file__).resolve()
 parent, root = file.parent, file.parents[1]
@@ -10,9 +11,8 @@ sys.path.append(str(root))
 
 from item_data import Items
 from loadout import Loadout
-from logicCasual import Casual
 from logicCommon import ammo_in_loadout, ammo_req, energy_from_tanks, crystal_flash, energy_req, varia_or_hell_run
-from logicExpert import Expert
+from logic_presets import casual, expert
 from logic_shortcut import LogicShortcut
 
 
@@ -32,8 +32,13 @@ def test_energy_from_tanks() -> None:
     assert energy_from_tanks(16) == 1499
 
 
+def make_game(logic: frozenset[Trick]) -> Game:
+    options = GameOptions(logic, False, "D", True)
+    return Game(options, {}, [], 0)
+
+
 def test_energy_req() -> None:
-    game = Game(Casual, [], False, [])
+    game = make_game(casual)
     loadout = Loadout(game, (Items.Energy for _ in range(10)))
 
     assert energy_req(900) in loadout
@@ -48,7 +53,7 @@ def test_energy_req() -> None:
 
     assert energy_req(900) not in loadout
 
-    game = Game(Expert, [], False, [])
+    game = make_game(expert)
     loadout = Loadout(game)  # empty
 
     assert energy_req(700) not in loadout
@@ -66,7 +71,7 @@ def test_energy_req() -> None:
 
 
 def test_varia_or_hell_run() -> None:
-    game = Game(Expert, [], False, [])
+    game = make_game(expert)
     loadout = Loadout(game)
 
     assert varia_or_hell_run(400) not in loadout
@@ -102,6 +107,21 @@ def test_varia_or_hell_run() -> None:
     assert varia_or_hell_run(1400) in loadout
 
 
+def test_other_suit_hell_runs() -> None:
+    game = make_game(expert)
+    loadout = Loadout(game)
+    loadout.append(Items.MetroidSuit)
+    loadout.append(Items.GravitySuit)
+    for _ in range(6):
+        loadout.append(Items.Energy)
+
+    assert varia_or_hell_run(1450, heat_and_metroid_suit_not_required=True) not in loadout
+
+    loadout.append(Items.Energy)
+
+    assert varia_or_hell_run(1450, heat_and_metroid_suit_not_required=True) in loadout
+
+
 def test_use_as_bool() -> None:
     """
     `LogicShortcut` must have a connection to a `Loadout`,
@@ -115,7 +135,7 @@ def test_use_as_bool() -> None:
         (Items.Bombs in loadout) and
         (Items.Morph in loadout)
     ))
-    game = Game(Casual, [], False, [])
+    game = make_game(casual)
     loadout = Loadout(game)
 
     with pytest.raises(TypeError):
@@ -130,7 +150,7 @@ def test_use_as_bool() -> None:
 
 
 def test_ammo_in_loadout() -> None:
-    game = Game(Casual, [], False, [])
+    game = make_game(casual)
     loadout = Loadout(game)
 
     assert ammo_in_loadout(loadout) == 0, f"empty loadout has {ammo_in_loadout(loadout)}"
@@ -159,7 +179,7 @@ def test_ammo_in_loadout() -> None:
 
 
 def test_ammo_req() -> None:
-    game = Game(Casual, [], False, [])
+    game = make_game(casual)
     loadout = Loadout(game)
 
     assert ammo_req(5) not in loadout
@@ -183,7 +203,7 @@ def test_ammo_req() -> None:
 
     assert crystal_flash not in loadout
 
-    for _ in range(10):
+    for _ in range(12):
         loadout.append(Items.SmallAmmo)
 
     assert crystal_flash in loadout

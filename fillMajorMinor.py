@@ -5,13 +5,13 @@ from connection_data import AreaDoor
 from fillInterface import FillAlgorithm
 from item_data import Item, items_unpackable
 from loadout import Loadout
-from location_data import Location, majorLocs
+from location_data import Location, majorLocs, eTankLocs
 
 (
     Missile, Super, PowerBomb, Morph, GravityBoots, Speedball, Bombs, HiJump,
     GravitySuit, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
     MetroidSuit, Plasma, Screw, Hypercharge, Charge, Xray, SpaceJump, Energy,
-    Refuel, SmallAmmo, LargeAmmo, DamageAmp, ChargeAmp, SpaceJumpBoost,
+    Refuel, SmallAmmo, LargeAmmo, DamageAmp, AccelCharge, SpaceJumpBoost,
     spaceDrop
 ) = items_unpackable
 
@@ -57,7 +57,7 @@ class FillMajorMinor(FillAlgorithm):
         self.extraItemList = [
             Refuel, Refuel, Refuel, Refuel, Refuel, Refuel, Refuel,
             DamageAmp, DamageAmp, DamageAmp, DamageAmp, DamageAmp, DamageAmp,
-            ChargeAmp, ChargeAmp, ChargeAmp, ChargeAmp, ChargeAmp, ChargeAmp,
+            AccelCharge, AccelCharge, AccelCharge, AccelCharge, AccelCharge, AccelCharge,
             SpaceJumpBoost, SpaceJumpBoost, SpaceJumpBoost, SpaceJumpBoost,
             SpaceJumpBoost, SpaceJumpBoost, SpaceJumpBoost, SpaceJumpBoost,
             SmallAmmo, SmallAmmo, SmallAmmo, SmallAmmo, SmallAmmo,
@@ -108,16 +108,17 @@ class FillMajorMinor(FillAlgorithm):
             valid_locations = [
                 loc
                 for loc in availableLocations
-                if (loc['fullitemname'] in majorLocs)
+                if (loc['fullitemname'] in majorLocs or loc["fullitemname"] in eTankLocs)
             ]
-            if from_items is self.earlyItemList and len(valid_locations) == 0 and (Morph in loadout):
-                for sandySearch in loadout.game.all_locations:
-                    # print("Searching for Sandy Cache: ", sandySearch['fullitemname'])
-                    if sandySearch['fullitemname'] == "Sandy Cache":
-                        # print("   ---   appending sandy cache")
-                        valid_locations.append(sandySearch)
-                        availableLocations.append(sandySearch)
-                        break
+            if from_items is self.earlyItemList and len(valid_locations) == 0 and (
+                (Morph in loadout) or (
+                    (GravityBoots in loadout) and (Missile in loadout)
+                )
+            ):
+                sandy = loadout.game.all_locations["Sandy Cache"]
+                # print("   ---   appending sandy cache")
+                valid_locations.append(sandy)
+                availableLocations.append(sandy)
             if len(valid_locations) == 0:
                 return None  # fail
 

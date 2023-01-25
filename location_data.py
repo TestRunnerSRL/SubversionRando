@@ -31,11 +31,11 @@ spacePortLocs = ["Ready Room",
 
 
 majorLocs = frozenset([
-    "Ocean Vent Supply Depot",  # start of unique majors
+    "Ocean Vent Supply Depot",
     "Sandy Cache",
     "Shrine Of The Penumbra",
     "Subterranean Burrow",
-    "Archives: SpringBall",
+    "Archives: Front",
     "Arena",
     "Grand Vault",
     "Harmonic Growth Enhancer",
@@ -53,15 +53,18 @@ majorLocs = frozenset([
     "Syzygy Observatorium",
     "Shrine Of The Animate Spark",
     "Extract Storage",
-    "Torpedo Bay",  # end of unique majors
-    "Sandy Burrow: ETank",  # E Tanks
+    "Torpedo Bay",
+])
+
+eTankLocs = frozenset([
+    "Sandy Burrow: Top",
     "Sediment Flow",
     "Epiphreatic Crag",
     "Mezzanine Concourse",
-    "Sensor Maintenance: ETank",
+    "Sensor Maintenance: Top",
     "Trophobiotic Chamber",
     "Vulnar Caves Entrance",
-    "Warrior Shrine: ETank",
+    "Warrior Shrine: Middle",
     "Depressurization Valve",
     "Gymnasium",
     "Mining Cache",
