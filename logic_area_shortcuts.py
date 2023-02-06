@@ -628,6 +628,7 @@ class Verdite:
                 (Screw in loadout) and (GravitySuit in loadout)  # need aqua to come up through this hole with screw
             ))
         )) and
+        # TODO: rusty said there's a way to get through hive entrance with speed booster, I don't see how
         (
             (GravitySuit in loadout) or
             (Tricks.sbj_underwater_no_hjb in loadout) or
@@ -668,7 +669,11 @@ class Verdite:
     beta = LogicShortcut(lambda loadout: (
         # something to avoid taking damage from the
         # lava at the bottom of mining site beta during hell run
-        loadout.has_any(Speedball, Varia, MetroidSuit, Tricks.mockball_hard, energy_req(1050)) and
+        (
+            loadout.has_any(Speedball, MetroidSuit, Tricks.mockball_hard, energy_req(1050)) or
+            # If you don't have a way to avoid the lava damage, you'll need some energy to fall in the lava.
+            ((Varia in loadout) and (energy_req(hell_run_energy(183, loadout)) in loadout))
+        ) and
 
         (GravityBoots in loadout) and
         # 4 pbs - beta, lava pool, vulnar elevator, placid pool
@@ -712,7 +717,8 @@ class PirateLab:
         ((Screw in loadout) or (can_bomb(1) in loadout)) and  # through wall
         (  # through the passage lined with screw blocks
             (
-                (GravitySuit in loadout) and
+                # This morph jump out of wall jump is harder without aqua suit.
+                ((GravitySuit in loadout) or (Tricks.movement_zoast in loadout)) and
                 (Morph in loadout) and
                 (Tricks.morph_jump_4_tile in loadout)
             ) or (
@@ -735,7 +741,7 @@ class PirateLab:
     ))
     """ from ConstructionSiteL door to the elevator that is under construction """
 
-    epiphreaticCrag_left = LogicShortcut(lambda loadout: (
+    epiphreatic = LogicShortcut(lambda loadout: (
         (Morph in loadout) and
         (
             # with no high jump, in the right shot block passage,
@@ -757,7 +763,7 @@ class PirateLab:
     ))
     """ up to the outside wall of the pirate lab """
 
-    epiphreaticCrag_right = LogicShortcut(lambda loadout: (
+    isobaric = LogicShortcut(lambda loadout: (
         (Morph in loadout) and
         (
             (shootThroughWalls in loadout) or
@@ -767,9 +773,9 @@ class PirateLab:
     ))
     """ gate into the pirate lab """
 
-    epiphreaticCrag = LogicShortcut(lambda loadout: (
-        (PirateLab.epiphreaticCrag_left in loadout) and
-        (PirateLab.epiphreaticCrag_right in loadout)
+    epiphreaticIsobaric = LogicShortcut(lambda loadout: (
+        (PirateLab.epiphreatic in loadout) and
+        (PirateLab.isobaric in loadout)
     ))
     """ epiphreatic crag left and right, in and out of pirate lab """
 
@@ -816,7 +822,7 @@ class PirateLab:
     hydrodynamicChamber = LogicShortcut(lambda loadout: (
         (GravitySuit in loadout) or
         (HiJump in loadout) or
-        (loadout.has_all(Ice, Tricks.freeze_hard, Tricks.movement_zoast)) or
+        (loadout.has_all(Ice, Tricks.crouch_or_downgrab, Tricks.movement_moderate)) or
         ((Speedball in loadout) and (Tricks.sbj_underwater_no_hjb in loadout))
     ))
     """ only inside the room, not including the super door """
@@ -838,6 +844,11 @@ class PirateLab:
     ))
     """ from west corridor to the top of central corridor (not through screw to go lower) """
 
+    centralTopToMid = LogicShortcut(lambda loadout: (
+        (Screw in loadout) or
+        ((Tricks.super_sink_easy in loadout) and (Tricks.xray_climb in loadout))
+    ))
+
     centralCorridorWater = LogicShortcut(lambda loadout: (
         ((
             (Tricks.movement_zoast in loadout)  # gravity jump through door
@@ -851,6 +862,8 @@ class PirateLab:
             # high jump gets you high enough to wall jump
             (HiJump in loadout) and
             ((Tricks.wall_jump_precise in loadout) or (Tricks.uwu_2_tile_surface in loadout))
+        ) or (
+            (Tricks.xray_climb in loadout)
         ))
         # TODO: can springball jump get me out?
     ))

@@ -282,21 +282,21 @@ doorsToCentralCorridorBottom = LogicShortcut(lambda loadout: (
             # through PB tube
             (killGreenPirates in loadout) and
             (can_use_pbs(1) in loadout) and
-            (PirateLab.epiphreaticCrag in loadout)
+            (PirateLab.epiphreaticIsobaric in loadout)
         ) or (
             # through hydrodynamic chamber
             (PirateLab.westCorridorToCentralTop in loadout) and
-            (Screw in loadout) and
+            (PirateLab.centralTopToMid in loadout) and
             (PirateLab.centralCorridorWater in loadout)
         ))
     ) or (
         (ExcavationSiteL in loadout) and
         (can_use_pbs(1) in loadout) and
-        (PirateLab.epiphreaticCrag in loadout)
+        (PirateLab.epiphreaticIsobaric in loadout)
     ) or (
         (ConstructionSiteL in loadout) and
         (PirateLab.constructionLToElevator in loadout) and
-        (PirateLab.epiphreaticCrag in loadout)
+        (PirateLab.epiphreaticIsobaric in loadout)
     ) or (
         (AlluringCenoteR in loadout) and
         (PirateLab.cenote in loadout) and
@@ -310,6 +310,14 @@ doorsToCentralCorridorBottom = LogicShortcut(lambda loadout: (
 ))
 """ pirate lab area doors to bottom of central corridor """
 
+# TODO: without bombs or screw or super sink, I could
+# enter pirate lab through isobaric vent,
+# xray climb up central corridor,
+# and circle back to wherever I came from through PB tube
+
+# full circle:
+# (isobaric - bombs), xray climb central, hydrodynamic, west corridor, lab workshop, PBs for pb tube
+
 doorsToCentralCorridorMid = LogicShortcut(lambda loadout: (
     # similar to bottom
     # the only difference is where I have to get out of the water
@@ -320,22 +328,22 @@ doorsToCentralCorridorMid = LogicShortcut(lambda loadout: (
             # through PB tube
             (killGreenPirates in loadout) and
             (can_use_pbs(1) in loadout) and
-            (PirateLab.epiphreaticCrag in loadout) and
+            (PirateLab.epiphreaticIsobaric in loadout) and
             (PirateLab.centralCorridorWater in loadout)
         ) or (
             # through hydrodynamic chamber
             (PirateLab.westCorridorToCentralTop in loadout) and
-            (Screw in loadout)
+            (PirateLab.centralTopToMid in loadout)
         ))
     ) or (
         (ExcavationSiteL in loadout) and
         (can_use_pbs(1) in loadout) and
-        (PirateLab.epiphreaticCrag in loadout) and
+        (PirateLab.epiphreaticIsobaric in loadout) and
         (PirateLab.centralCorridorWater in loadout)
     ) or (
         (ConstructionSiteL in loadout) and
         (PirateLab.constructionLToElevator in loadout) and
-        (PirateLab.epiphreaticCrag in loadout) and
+        (PirateLab.epiphreaticIsobaric in loadout) and
         (PirateLab.centralCorridorWater in loadout)
     ) or (
         (AlluringCenoteR in loadout) and
@@ -477,7 +485,13 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
                 (MetroidSuit in loadout) or
                 (energy_req(880) in loadout) or
                 ((GravitySuit in loadout) and (energy_req(650) in loadout))
-            ))
+            )) or
+
+            # super sink down, xray climb up
+            (
+                (Tricks.super_sink_easy in loadout) and  # door-stuck to start super sink
+                (Tricks.xray_climb in loadout)
+            )
         )
     ),
     "Sediment Flow": lambda loadout: (
@@ -582,14 +596,21 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
             (
                 (Speedball in loadout) and  # follow your bullet with speedball to hit the switch
                 (Tricks.movement_moderate in loadout)
-            )
+            ) or
+
+            # an ice beam shot can clip through the platform from beneath to hit the top left switch
+            ((Ice in loadout) and (Tricks.wave_gate_glitch in loadout) and (Tricks.movement_moderate in loadout))
+            # I tried for a while with normal beam and couldn't get it.
+            # (If it's possible, I think it's too hard to put in logic.)
+            # TODO: do we want a different trick for this?
+            # TODO: check plasma and spazer
         )
     ),
     "Archives: Front": lambda loadout: (
         (sunkenNestToVulnar in loadout) and
         (pinkDoor in loadout) and  # into way of the watcher
         (Morph in loadout) and
-        (Speedball in loadout)
+        ((Speedball in loadout) or (Tricks.super_sink_easy in loadout))
     ),
     "Archives: Back": lambda loadout: (
         (sunkenNestToVulnar in loadout) and
@@ -638,9 +659,10 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
             (Tricks.crouch_or_downgrab in loadout)
         ) or (
             # go up on the right side, then left above the water
-            (PirateLab.epiphreaticCrag_left in loadout) and
+            (PirateLab.epiphreatic in loadout) and
             ((can_use_pbs(1) in loadout) or (
-                (Screw in loadout) and (Bombs in loadout)
+                ((Screw in loadout) or (Tricks.super_sink_easy in loadout)) and
+                (Bombs in loadout)
             ))
         ))
     ),
@@ -705,6 +727,8 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
         ))
     ),
     "Fire's Boon Shrine": lambda loadout: (
+        # TODO: hell run numbers for pit stop at fire temple courtyard
+        # (because it's weird that ancient basin is in logic from firehive entrance, and not boon)
         ((shootThroughWalls in loadout) or (
             (Tricks.ggg in loadout) and
             (Varia in loadout) and  # hell run ggg over spikes not in logic
@@ -1534,7 +1558,7 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
         (Charge in loadout)
     ),
     "Weapon Locker": lambda loadout: (
-        (Missile in loadout) and
+        (pinkDoor in loadout) and
         (topOfSpaceport in loadout)
     ),
     "Aft Battery": lambda loadout: (
@@ -1542,10 +1566,10 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
         (topOfSpaceport in loadout)
     ),
     "Forward Battery": lambda loadout: (
-        loadout.has_all(Morph, Missile, topOfSpaceport)
+        loadout.has_all(Morph, pinkDoor, missileDamage, topOfSpaceport)
     ),
     "Gantry": lambda loadout: (
-        (Missile in loadout) and
+        (pinkDoor in loadout) and
         (topOfSpaceport in loadout)
     ),
     "Garden Canal": lambda loadout: (
@@ -1715,7 +1739,7 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
         (icePod in loadout) and
         (MetroidSuit in loadout) and
         (can_bomb(3) in loadout) and
-        (lava_run(450, 950) in loadout)
+        (lava_run(450, 640) in loadout)  # TODO: remeasure this with aqua suit
     ),
     "Hydrodynamic Chamber": lambda loadout: (
         (GravityBoots in loadout) and
@@ -1726,7 +1750,7 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
             (PirateLab.westCorridorToCentralTop in loadout)
         ) or (
             (doorsToCentralCorridorMid in loadout) and
-            (Screw in loadout)
+            (PirateLab.centralTopToMid in loadout)
         ))
     ),
     "Central Corridor: Left": lambda loadout: (
@@ -1776,10 +1800,34 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
     "Glacier's Reach": lambda loadout: (
         (railAccess in loadout) and
         (GravityBoots in loadout) and
+        # top of frozen trail
         ((can_bomb(1) in loadout) or (breakIce in loadout) or (
             loadout.has_all(Screw, Tricks.morphless_tunnel_crawl)
         )) and
-        (varia_or_hell_run(252) in loadout)
+        # bottom of frozen trail
+        ((Morph in loadout) or (breakIce in loadout)) and
+        ((  # hell run health can vary a lot depending on gear
+            (varia_or_hell_run(386) in loadout)
+        ) or (
+            # don't have to climb the right wall of glacier's reach
+            loadout.has_any(HiJump, SpaceJump) and
+            (varia_or_hell_run(301) in loadout)
+        ) or (
+            # Wave makes a big difference to avoid getting hit by one enemy that you can shoot through the wall
+            (Wave in loadout) and
+            loadout.has_any(Spazer, DamageAmp) and
+            (varia_or_hell_run(230) in loadout)
+        ) or (
+            # can kill blue rippers (without using ammo) for high drop rate on health
+            # can farm to full health at the door between Icy Flow and Frozen Trail
+            ((Screw in loadout) or (
+                (Charge in loadout) and (Hypercharge in loadout)
+            )) and
+            (varia_or_hell_run(88) in loadout)
+        ) or (
+            (breakIce in loadout) and
+            (varia_or_hell_run(179) in loadout)
+        ))
     ),
     "Sitting Room": lambda loadout: (
         (can_use_pbs(1) in loadout) and  # might have to farm after opening door
@@ -1902,7 +1950,7 @@ location_logic: dict[str, Callable[[Loadout], bool]] = {
             ))
         ) or (
             (doorsToCentralCorridorMid in loadout) and
-            (Screw in loadout) and
+            (PirateLab.centralTopToMid in loadout) and
             # backdoor main hydrology research
             loadout.has_any(GravitySuit, HiJump, Tricks.sbj_underwater_no_hjb)
         )) and

@@ -1,7 +1,7 @@
 from connection_data import area_doors_unpackable
 from door_logic import canOpen
 from item_data import items_unpackable
-from logicCommon import can_bomb, can_use_pbs
+from logicCommon import can_bomb, can_use_pbs, lava_run
 from logic_area_shortcuts import SandLand, ServiceSector, LifeTemple, \
     SkyWorld, FireHive, PirateLab, Verdite, Geothermal, Early
 from logicInterface import AreaLogicType
@@ -276,11 +276,11 @@ area_logic: AreaLogicType = {
             ((  # high
                 (killGreenPirates in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.eastCorridor in loadout)
             ) or (  # low
                 (can_use_pbs(1) in loadout) and
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (PirateLab.centralCorridorWater in loadout) and
                 (PirateLab.eastCorridor in loadout)
             ))
@@ -295,11 +295,12 @@ area_logic: AreaLogicType = {
             ((  # high
                 (killGreenPirates in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
+                ((Screw in loadout) or (MetroidSuit in loadout)) and
                 (PirateLab.cenote in loadout)
             ) or (  # low
                 (can_use_pbs(1) in loadout) and
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (PirateLab.centralCorridorWater in loadout) and
                 ((Screw in loadout) or (MetroidSuit in loadout)) and
                 (PirateLab.cenote in loadout)
@@ -312,7 +313,7 @@ area_logic: AreaLogicType = {
             (GravityBoots in loadout) and
             (canOpen(FoyerR) in loadout) and
             (PirateLab.westCorridorToCentralTop in loadout) and
-            (Screw in loadout) and
+            (PirateLab.centralTopToMid in loadout) and
             (PirateLab.eastCorridor in loadout)
         ),
         ("WestCorridorR", "ConstructionSiteL"): lambda loadout: (
@@ -322,28 +323,29 @@ area_logic: AreaLogicType = {
                 (can_use_pbs(1) in loadout)
             ) or (
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.centralCorridorWater in loadout) and
-                (PirateLab.epiphreaticCrag in loadout)
+                (PirateLab.epiphreaticIsobaric in loadout)
             )) and
             (PirateLab.constructionLToElevator in loadout)
         ),
         ("WestCorridorR", "AlluringCenoteR"): lambda loadout: (
             (GravityBoots in loadout) and
             (PirateLab.westCorridorToCentralTop in loadout) and
-            (Screw in loadout) and
+            (PirateLab.centralTopToMid in loadout) and
+            ((Screw in loadout) or (MetroidSuit in loadout)) and
             (PirateLab.cenote in loadout)
         ),
         ("FoyerR", "ExcavationSiteL"): lambda loadout: (
             (GravityBoots in loadout) and
             ((  # high
                 (PirateLab.eastCorridor in loadout) and
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (killGreenPirates in loadout)  # TODO: is this needed for either direction if you start from corridor?
             ) or (  # low
                 (can_use_pbs(1) in loadout) and
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (PirateLab.centralCorridorWater in loadout) and
                 (PirateLab.eastCorridor in loadout)
             ))
@@ -351,13 +353,13 @@ area_logic: AreaLogicType = {
         ("FoyerR", "WestCorridorR"): lambda loadout: (
             (GravityBoots in loadout) and
             (PirateLab.westCorridorToCentralTop in loadout) and
-            (Screw in loadout) and
+            (PirateLab.centralTopToMid in loadout) and
             (PirateLab.eastCorridor in loadout)
         ),
         ("FoyerR", "ConstructionSiteL"): lambda loadout: (
             (GravityBoots in loadout) and
             (PirateLab.constructionLToElevator in loadout) and
-            (PirateLab.epiphreaticCrag in loadout) and
+            (PirateLab.epiphreaticIsobaric in loadout) and
             (PirateLab.centralCorridorWater in loadout) and
             (PirateLab.eastCorridor in loadout)
         ),
@@ -373,9 +375,9 @@ area_logic: AreaLogicType = {
             ((  # outside
                 (can_use_pbs(1) in loadout)
             ) or (  # inside
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (PirateLab.centralCorridorWater in loadout) and
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (killGreenPirates in loadout)
             ))
@@ -391,7 +393,7 @@ area_logic: AreaLogicType = {
             (canOpen(FoyerR) in loadout) and
             (PirateLab.eastCorridor in loadout) and
             (PirateLab.centralCorridorWater in loadout) and
-            (PirateLab.epiphreaticCrag in loadout) and
+            (PirateLab.epiphreaticIsobaric in loadout) and
             (PirateLab.constructionLToElevator in loadout)
         ),
         ("ConstructionSiteL", "AlluringCenoteR"): lambda loadout: (
@@ -401,9 +403,9 @@ area_logic: AreaLogicType = {
                 (can_use_pbs(1) in loadout) and
                 (killGreenPirates in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (Screw in loadout)
+                (PirateLab.centralTopToMid in loadout)
             ) or (  # bottom
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (PirateLab.centralCorridorWater in loadout)
             )) and
             ((Screw in loadout) or (MetroidSuit in loadout)) and
@@ -414,10 +416,10 @@ area_logic: AreaLogicType = {
             ((  # top
                 (killGreenPirates in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (Screw in loadout)
+                (PirateLab.centralTopToMid in loadout)
             ) or (  # bottom
                 (can_use_pbs(1) in loadout) and
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (PirateLab.centralCorridorWater in loadout)
             )) and
             ((Screw in loadout) or (MetroidSuit in loadout)) and
@@ -428,11 +430,11 @@ area_logic: AreaLogicType = {
             (PirateLab.cenote in loadout) and
             ((Screw in loadout) or (MetroidSuit in loadout)) and
             ((
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout)
             ) or (
                 (PirateLab.centralCorridorWater in loadout) and
-                (PirateLab.epiphreaticCrag in loadout) and
+                (PirateLab.epiphreaticIsobaric in loadout) and
                 (can_use_pbs(1) in loadout) and
                 (killGreenPirates in loadout)
             ))
@@ -449,13 +451,13 @@ area_logic: AreaLogicType = {
             (PirateLab.cenote in loadout) and
             ((Screw in loadout) or (MetroidSuit in loadout)) and
             ((  # top
-                (Screw in loadout) and
+                (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (killGreenPirates in loadout) and
                 (can_use_pbs(1) in loadout)
             ) or (  # bottom
                 (PirateLab.centralCorridorWater in loadout) and
-                (PirateLab.epiphreaticCrag in loadout)
+                (PirateLab.epiphreaticIsobaric in loadout)
             )) and
             (PirateLab.constructionLToElevator in loadout)
         ),
@@ -985,7 +987,8 @@ area_logic: AreaLogicType = {
                 ) or
                 (electricHyper in loadout)
             ) and
-            (Varia in loadout) and
+            (lava_run(446, 950) in loadout) and  # TODO: measure lava run w/o aqua (950 is estimate)
+            # TODO: killDragons or higher numbers for lava run
             (MetroidSuit in loadout) and
             (can_use_pbs(1) in loadout)
         ),
@@ -998,7 +1001,8 @@ area_logic: AreaLogicType = {
                 ) or
                 (electricHyper in loadout)
             ) and
-            (Varia in loadout) and
+            (lava_run(446, 950) in loadout) and  # TODO: measure lava run w/o aqua (950 is estimate)
+            # TODO: killDragons or higher numbers for lava run
             (MetroidSuit in loadout) and
             (can_use_pbs(1) in loadout)
         ),
