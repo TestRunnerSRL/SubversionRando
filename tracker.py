@@ -14,11 +14,13 @@ from solver import required_doors, solve
 from trick import Trick
 from trick_data import Tricks, trick_name_lookup
 
-# TODO: ocean top, central right, central left, warrior bot/top/mid
 _name_aliases = {
     "Warrior Shrine: AmmoTank Top": "Warrior Shrine: Top",
+    "Warrior Top": "Warrior Shrine: Top",
     "Warrior Shrine: AmmoTank Bottom": "Warrior Shrine: Bottom",
+    "Warrior Bottom": "Warrior Shrine: Bottom",
     "Warrior Shrine: ETank": "Warrior Shrine: Middle",
+    "Warrior Middle": "Warrior Shrine: Middle",
     "Briar: AmmoTank": "Briar: Bottom",
     "Briar: SJBoost": "Briar: Top",
     "Archives: Right": "Archives: Front",
@@ -48,6 +50,14 @@ _name_aliases = {
     "Penumbra": "Shrine Of The Penumbra",
     "Fervor": "Shrine Of Fervor",
     "Animate Spark": "Shrine Of The Animate Spark",
+    "Burrow Top": "Sandy Burrow: Top",
+    "Burrow Bottom": "Sandy Burrow: Bottom",
+    "Swords": "Path Of Swords",
+    "Central Left": "Central Corridor: Left",
+    "Central Right": "Central Corridor: Right",
+    "Main Hive Chamber": "Hive Main Chamber",
+    "Ocean Top": "Ocean Shore: Top",
+    "Ocean Bottom": "Ocean Shore: Bottom",
 }
 """ alternate name: location name """
 # If you add an alias, add a unit test for it in test_tracker.py `test_loc_names_from_input()`

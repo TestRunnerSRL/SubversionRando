@@ -3,12 +3,18 @@ from trick import Trick
 
 
 class Tricks:
+    infinite_bomb_jump = Trick("use bombs to gain infinite height", Items.Morph, Items.Bombs)
+    """ use bombs to gain infinite height """
+
     sbj_underwater_no_hjb = Trick("underwater springball jump - no hi jump boots", Items.Morph, Items.Speedball)
     """ underwater springball jump - no hi jump boots """
 
     sbj_underwater_w_hjb = Trick("underwater springball jump with hi jump boots",
                                  Items.Morph, Items.Speedball, Items.HiJump)
     """ underwater springball jump with hi jump boots """
+
+    sbj_no_hjb = Trick("springball jump - no hi jump boots (no water)", Items.Morph, Items.Speedball)
+    """ springball jump - no hi jump boots (no water) """
 
     sbj_w_hjb = Trick("springball jump with hi jump boots (no water)", Items.Morph, Items.Speedball, Items.HiJump)
     """ springball jump with hi jump boots (no water) """
@@ -26,7 +32,7 @@ class Tricks:
     to get above the surface of the water
     """
 
-    gravity_jump = Trick("remove aqua suit right after jumping for extra jump height in water", Items.GravitySuit)
+    gravity_jump = Trick("remove aqua suit right after jumping for extra jump height in water", Items.Aqua)
     """ remove aqua suit right after jumping for extra jump height in water """
 
     hell_run_hard = Trick("heated or cold without varia suit - hell runs requiring the minimum amount of energy")

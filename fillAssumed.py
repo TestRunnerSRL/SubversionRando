@@ -5,7 +5,7 @@ from connection_data import AreaDoor
 from fillInterface import FillAlgorithm
 from item_data import Item, Items
 from loadout import Loadout
-from location_data import Location, spacePortLocs, majorLocs
+from location_data import Location, spacePortLocs, majorLocs, eTankLocs
 from solver import solve
 
 _minor_logic_items = {
@@ -34,7 +34,7 @@ _unique_items: frozenset[Item] = frozenset([
     Items.Speedball,
     Items.Bombs,
     Items.HiJump,
-    Items.GravitySuit,
+    Items.Aqua,
     Items.DarkVisor,
     Items.Wave,
     Items.SpeedBooster,
@@ -83,8 +83,7 @@ class FillAssumed(FillAlgorithm):
     def _get_empty_locations(self, all_locations: dict[str, Location]) -> list[Location]:
         return [loc for loc in all_locations.values() if loc["item"] is None]
 
-    @staticmethod
-    def transform_spaceport(available_locations: list[Location], item_to_place: Item) -> list[Location]:
+    def transform_spaceport(self, available_locations: list[Location], item_to_place: Item) -> list[Location]:
         """
         transform the distribution of locations to work against spaceport front-loading
 
@@ -96,6 +95,18 @@ class FillAssumed(FillAlgorithm):
             for loc in available_locations:
                 if (
                     (loc["fullitemname"] == "Torpedo Bay" and item_to_place == Items.GravityBoots) or
+
+                    # if the locking item is already placed, then it's safe to put progression in spaceport
+                    (loc["fullitemname"] == "Extract Storage" and (
+                        (Items.PowerBomb not in self.prog_items) or (
+                            (Items.MetroidSuit not in self.prog_items) and
+                            (Items.Hypercharge not in self.prog_items) and
+                            ((Items.Ice not in self.prog_items) or (Items.Super not in self.prog_items))
+                        )
+                    )) or
+                    (loc["fullitemname"] == "Ready Room" and Items.Super not in self.prog_items) or
+                    (loc["fullitemname"] in {"Forward Battery", "Aft Battery"} and Items.Morph not in self.prog_items) or
+                    (loc["fullitemname"] in {"Docking Port 3", "Docking Port 4"} and Items.Grapple not in self.prog_items) or
                     loc["fullitemname"] not in spacePortLocs
                 ):
                     # number of copies can be tuned
@@ -121,6 +132,19 @@ class FillAssumed(FillAlgorithm):
                 tr.append(loc)
         return tr
 
+    @staticmethod
+    def transform_mm(available_locations: list[Location], item_to_place: Item) -> list[Location]:
+        """ transform the distribution of locations for major minor """
+        major = item_to_place in _unique_items or item_to_place == Items.Energy
+        tr: list[Location] = []
+        for loc in available_locations:
+            location_major = (loc["fullitemname"] in majorLocs or loc["fullitemname"] in eTankLocs)
+            if major and location_major:
+                tr.append(loc)
+            elif (not major) and (not location_major):
+                tr.append(loc)
+        return tr
+
     def choose_placement(self,
                          availableLocations: list[Location],
                          loadout: Loadout) -> Optional[tuple[Location, Item]]:
@@ -134,7 +158,11 @@ class FillAssumed(FillAlgorithm):
 
         assert len(from_items), "tried to place item when placement algorithm has 0 items left in item pool"
 
-        item_to_place = random.choice(from_items)
+        if loadout.game.options.fill_choice == "MM" and Items.Morph in from_items:
+            # major/minor and haven't placed morph yet
+            item_to_place = Items.Morph
+        else:
+            item_to_place = random.choice(from_items)
 
         # If Missile is placed before Super, it's very likely that
         # Super will be in Torpedo Bay or some other really early place.
@@ -161,6 +189,10 @@ class FillAssumed(FillAlgorithm):
 
         if loadout.game.options.fill_choice == "B":
             available_locations = self.transform_mmb(available_locations, item_to_place)
+        elif loadout.game.options.fill_choice == "MM":
+            available_locations = self.transform_mm(available_locations, item_to_place)
+        if len(available_locations) == 0:
+            return None
 
         available_locations = self.transform_spaceport(available_locations, item_to_place)
 

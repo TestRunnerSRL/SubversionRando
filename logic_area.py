@@ -6,8 +6,8 @@ from logic_area_shortcuts import SandLand, ServiceSector, LifeTemple, \
     SkyWorld, FireHive, PirateLab, Verdite, Geothermal, Early
 from logicInterface import AreaLogicType
 from logic_shortcut_data import (
-    canFly, shootThroughWalls, breakIce, pinkDoor, missileBarrier, icePod,
-    electricHyper, killGreenPirates, underwaterSuperSink
+    shootThroughWalls, breakIce, pinkDoor, missileBarrier, icePod,
+    electricHyper, killGreenOrRedPirates, underwaterSuperSink
 )
 from trick_data import Tricks
 
@@ -28,7 +28,7 @@ from trick_data import Tricks
 
 (
     Missile, Super, PowerBomb, Morph, GravityBoots, Speedball, Bombs, HiJump,
-    GravitySuit, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
+    Aqua, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
     MetroidSuit, Plasma, Screw, Hypercharge, Charge, Xray, SpaceJump, Energy,
     Refuel, SmallAmmo, LargeAmmo, DamageAmp, AccelCharge, SpaceJumpBoost,
     spaceDrop
@@ -40,7 +40,14 @@ area_logic: AreaLogicType = {
         # using SunkenNestL as the hub for this area, so we don't need a path from every door to every other door
         # just need at least a path with sunken nest to and from every other door in the area
         ("CraterR", "SunkenNestL"): lambda loadout: (
-            canFly in loadout
+            (GravityBoots in loadout) and
+            ((
+                (SpaceJump in loadout) and (
+                    (HiJump in loadout) or (SpaceJumpBoost in loadout)
+                )  # 1 SJ boost enough with no hjb
+            ) or (SpeedBooster in loadout) or (
+                (Tricks.infinite_bomb_jump in loadout)
+            ))
         ),
         ("SunkenNestL", "CraterR"): lambda loadout: (
             (GravityBoots in loadout) and
@@ -50,7 +57,7 @@ area_logic: AreaLogicType = {
                     (HiJump in loadout) or (SpaceJumpBoost in loadout)
                 )  # 1 SJ boost enough with no hjb
             ) or (SpeedBooster in loadout) or (
-                (Morph in loadout) and (Bombs in loadout)
+                (Tricks.infinite_bomb_jump in loadout)
             ))
         ),
         ("SunkenNestL", "RuinedConcourseBL"): lambda loadout: (
@@ -250,31 +257,31 @@ area_logic: AreaLogicType = {
             ))
         ),
         ("OceanShoreR", "PileAnchorL"): lambda loadout: (
-            loadout.has_all(Super, GravityBoots, GravitySuit, can_use_pbs(2), SpeedBooster, Grapple) and
+            loadout.has_all(Super, GravityBoots, Aqua, can_use_pbs(2), SpeedBooster, Grapple) and
             ((DarkVisor in loadout) or (Tricks.dark_medium in loadout))
         ),
         ("EleToTurbidPassageR", "PileAnchorL"): lambda loadout: (
-            loadout.has_all(Super, GravityBoots, GravitySuit, can_use_pbs(2), SpeedBooster, Grapple) and
+            loadout.has_all(Super, GravityBoots, Aqua, can_use_pbs(2), SpeedBooster, Grapple) and
             ((DarkVisor in loadout) or (Tricks.dark_medium in loadout))
         ),
         ("PileAnchorL", "OceanShoreR"): lambda loadout: (
-            loadout.has_all(Super, GravityBoots, GravitySuit, can_use_pbs(2), SpeedBooster, Grapple) and
+            loadout.has_all(Super, GravityBoots, Aqua, can_use_pbs(2), SpeedBooster, Grapple) and
             ((DarkVisor in loadout) or (Tricks.dark_medium in loadout))
         ),
         ("PileAnchorL", "EleToTurbidPassageR"): lambda loadout: (
-            loadout.has_all(Super, GravityBoots, GravitySuit, can_use_pbs(2), SpeedBooster, Grapple) and
+            loadout.has_all(Super, GravityBoots, Aqua, can_use_pbs(2), SpeedBooster, Grapple) and
             ((DarkVisor in loadout) or (Tricks.dark_medium in loadout))
         ),
     },
     "PirateLab": {
         ("ExcavationSiteL", "WestCorridorR"): lambda loadout: (
-            (GravityBoots in loadout) and (killGreenPirates in loadout)
+            (GravityBoots in loadout) and (killGreenOrRedPirates(5) in loadout)
         ),
         ("ExcavationSiteL", "FoyerR"): lambda loadout: (
             (GravityBoots in loadout) and
             (canOpen(FoyerR) in loadout) and
             ((  # high
-                (killGreenPirates in loadout) and
+                (killGreenOrRedPirates(5) in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.eastCorridor in loadout)
@@ -293,7 +300,7 @@ area_logic: AreaLogicType = {
         ("ExcavationSiteL", "AlluringCenoteR"): lambda loadout: (
             (GravityBoots in loadout) and
             ((  # high
-                (killGreenPirates in loadout) and
+                (killGreenOrRedPirates(5) in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (PirateLab.centralTopToMid in loadout) and
                 ((Screw in loadout) or (MetroidSuit in loadout)) and
@@ -307,7 +314,7 @@ area_logic: AreaLogicType = {
             ))
         ),
         ("WestCorridorR", "ExcavationSiteL"): lambda loadout: (
-            (GravityBoots in loadout) and (killGreenPirates in loadout)
+            (GravityBoots in loadout) and (killGreenOrRedPirates(5) in loadout)
         ),
         ("WestCorridorR", "FoyerR"): lambda loadout: (
             (GravityBoots in loadout) and
@@ -319,7 +326,7 @@ area_logic: AreaLogicType = {
         ("WestCorridorR", "ConstructionSiteL"): lambda loadout: (
             (GravityBoots in loadout) and
             ((
-                (killGreenPirates in loadout) and  # TODO: is this needed for either direction if start from corridor?
+                (killGreenOrRedPirates(5) in loadout) and  # needed to go right if start from corridor
                 (can_use_pbs(1) in loadout)
             ) or (
                 (PirateLab.westCorridorToCentralTop in loadout) and
@@ -342,7 +349,7 @@ area_logic: AreaLogicType = {
                 (PirateLab.eastCorridor in loadout) and
                 (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (killGreenPirates in loadout)  # TODO: is this needed for either direction if you start from corridor?
+                (killGreenOrRedPirates(5) in loadout)  # needed to return right even if you start from corridor
             ) or (  # low
                 (can_use_pbs(1) in loadout) and
                 (PirateLab.epiphreaticIsobaric in loadout) and
@@ -379,12 +386,12 @@ area_logic: AreaLogicType = {
                 (PirateLab.centralCorridorWater in loadout) and
                 (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (killGreenPirates in loadout)
+                (killGreenOrRedPirates(5) in loadout)
             ))
         ),
         ("ConstructionSiteL", "WestCorridorR"): lambda loadout: (
             (GravityBoots in loadout) and
-            (killGreenPirates in loadout) and
+            (killGreenOrRedPirates(5) in loadout) and
             (can_use_pbs(1) in loadout) and
             (PirateLab.constructionLToElevator in loadout)
         ),
@@ -401,7 +408,7 @@ area_logic: AreaLogicType = {
             (PirateLab.constructionLToElevator in loadout) and
             ((  # top
                 (can_use_pbs(1) in loadout) and
-                (killGreenPirates in loadout) and
+                (killGreenOrRedPirates(5) in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (PirateLab.centralTopToMid in loadout)
             ) or (  # bottom
@@ -414,7 +421,7 @@ area_logic: AreaLogicType = {
         ("AlluringCenoteR", "ExcavationSiteL"): lambda loadout: (
             (GravityBoots in loadout) and
             ((  # top
-                (killGreenPirates in loadout) and
+                (killGreenOrRedPirates(5) in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
                 (PirateLab.centralTopToMid in loadout)
             ) or (  # bottom
@@ -436,7 +443,7 @@ area_logic: AreaLogicType = {
                 (PirateLab.centralCorridorWater in loadout) and
                 (PirateLab.epiphreaticIsobaric in loadout) and
                 (can_use_pbs(1) in loadout) and
-                (killGreenPirates in loadout)
+                (killGreenOrRedPirates(5) in loadout)
             ))
         ),
         ("AlluringCenoteR", "FoyerR"): lambda loadout: (
@@ -453,7 +460,7 @@ area_logic: AreaLogicType = {
             ((  # top
                 (PirateLab.centralTopToMid in loadout) and
                 (PirateLab.westCorridorToCentralTop in loadout) and
-                (killGreenPirates in loadout) and
+                (killGreenOrRedPirates(5) in loadout) and
                 (can_use_pbs(1) in loadout)
             ) or (  # bottom
                 (PirateLab.centralCorridorWater in loadout) and
@@ -552,21 +559,25 @@ area_logic: AreaLogicType = {
     "SkyWorld": {
         ("WestTerminalAccessL", "MezzanineConcourseL"): lambda loadout: (
             (GravityBoots in loadout) and
+            (SkyWorld.westTerminal in loadout) and
             (SkyWorld.mezzanineShaft in loadout)
         ),
         ("WestTerminalAccessL", "VulnarCanyonL"): lambda loadout: (
             (GravityBoots in loadout) and
+            (SkyWorld.westTerminal in loadout) and
             (SpeedBooster in loadout) and
             (canOpen(VulnarCanyonL) in loadout) and
             (SkyWorld.crackedCliffsideCave in loadout)
         ),
         ("WestTerminalAccessL", "CanyonPassageR"): lambda loadout: (
             (GravityBoots in loadout) and
+            (SkyWorld.westTerminal in loadout) and
             (SpeedBooster in loadout) and
             (SkyWorld.crackedCliffsideCave in loadout)
         ),
         ("WestTerminalAccessL", "ElevatorToCondenserL"): lambda loadout: (
             (GravityBoots in loadout) and
+            (SkyWorld.westTerminal in loadout) and
             (Morph in loadout) and
             (breakIce in loadout) and
             (SkyWorld.condenser in loadout)
@@ -574,7 +585,8 @@ area_logic: AreaLogicType = {
         ("MezzanineConcourseL", "WestTerminalAccessL"): lambda loadout: (
             (canOpen(WestTerminalAccessL) in loadout) and
             (GravityBoots in loadout) and
-            (SkyWorld.mezzanineShaft in loadout)
+            (SkyWorld.mezzanineShaft in loadout) and
+            (SkyWorld.westTerminal in loadout)
         ),
         ("MezzanineConcourseL", "VulnarCanyonL"): lambda loadout: (
             (GravityBoots in loadout) and
@@ -598,7 +610,8 @@ area_logic: AreaLogicType = {
             (GravityBoots in loadout) and
             (canOpen(WestTerminalAccessL) in loadout) and
             (SkyWorld.crackedCliffsideCave in loadout) and
-            (SpeedBooster in loadout)
+            (SpeedBooster in loadout) and
+            (SkyWorld.westTerminal in loadout)
         ),
         ("VulnarCanyonL", "MezzanineConcourseL"): lambda loadout: (
             (GravityBoots in loadout) and
@@ -621,7 +634,8 @@ area_logic: AreaLogicType = {
             (GravityBoots in loadout) and
             (canOpen(WestTerminalAccessL) in loadout) and
             ((can_bomb(1) in loadout) or (Screw in loadout)) and
-            (SpeedBooster in loadout)
+            (SpeedBooster in loadout) and
+            (SkyWorld.westTerminal in loadout)
         ),
         ("CanyonPassageR", "MezzanineConcourseL"): lambda loadout: (
             (GravityBoots in loadout) and
@@ -646,7 +660,8 @@ area_logic: AreaLogicType = {
             (Morph in loadout) and
             (breakIce in loadout) and
             (SkyWorld.condenser in loadout) and
-            (canOpen(WestTerminalAccessL) in loadout)
+            (canOpen(WestTerminalAccessL) in loadout) and
+            (SkyWorld.westTerminal in loadout)
         ),
         ("ElevatorToCondenserL", "MezzanineConcourseL"): lambda loadout: (
             (GravityBoots in loadout) and
@@ -762,14 +777,14 @@ area_logic: AreaLogicType = {
         ("VulnarDepthsElevatorER", "SequesteredInfernoL"): lambda loadout: (
             (GravityBoots in loadout) and
             (FireHive.hiveEntrance in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.crossways in loadout) and
             (FireHive.infernalSequestration in loadout)
         ),
         ("VulnarDepthsElevatorER", "CollapsedPassageR"): lambda loadout: (
             (GravityBoots in loadout) and
             (FireHive.hiveEntrance in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.crossways in loadout) and
             (FireHive.crosswaysToCourtyard in loadout) and
             (Super in loadout) and  # door to ancient basin access
@@ -783,14 +798,14 @@ area_logic: AreaLogicType = {
         ("HiveBurrowL", "SequesteredInfernoL"): lambda loadout: (
             (GravityBoots in loadout) and
             (FireHive.hiveBurrow in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.crossways in loadout) and
             (FireHive.infernalSequestration in loadout)
         ),
         ("HiveBurrowL", "CollapsedPassageR"): lambda loadout: (
             (GravityBoots in loadout) and
             (FireHive.hiveBurrow in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.crossways in loadout) and
             (FireHive.crosswaysToCourtyard in loadout) and
             (Super in loadout) and  # door to ancient basin access
@@ -800,13 +815,13 @@ area_logic: AreaLogicType = {
             (GravityBoots in loadout) and
             (FireHive.infernalSequestration in loadout) and
             (FireHive.crossways in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.hiveEntrance in loadout)
         ),
         ("SequesteredInfernoL", "HiveBurrowL"): lambda loadout: (
             (GravityBoots in loadout) and
             (FireHive.hiveBurrow in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.crossways in loadout) and
             (FireHive.infernalSequestration in loadout)
         ),
@@ -823,13 +838,13 @@ area_logic: AreaLogicType = {
             (pinkDoor in loadout) and  # into ancient basin
             (FireHive.crosswaysToCourtyard in loadout) and
             (FireHive.crossways in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.hiveEntrance in loadout)
         ),
         ("CollapsedPassageR", "HiveBurrowL"): lambda loadout: (
             (GravityBoots in loadout) and
             (FireHive.hiveBurrow in loadout) and
-            (icePod in loadout) and
+            ((icePod in loadout) or (FireHive.westHiveTunnel in loadout)) and
             (FireHive.crossways in loadout) and
             (FireHive.crosswaysToCourtyard in loadout) and
             (Super in loadout) and  # door to ancient basin access
@@ -982,7 +997,7 @@ area_logic: AreaLogicType = {
             (GravityBoots in loadout) and
             (
                 (
-                    (GravitySuit in loadout) and
+                    (Aqua in loadout) and
                     (Screw in loadout)
                 ) or
                 (electricHyper in loadout)
@@ -996,7 +1011,7 @@ area_logic: AreaLogicType = {
             (GravityBoots in loadout) and
             (
                 (
-                    (GravitySuit in loadout) and
+                    (Aqua in loadout) and
                     (Screw in loadout)
                 ) or
                 (electricHyper in loadout)

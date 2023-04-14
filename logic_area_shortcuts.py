@@ -1,19 +1,19 @@
 """ This is for logic shortcuts that apply only to 1 specific area. """
 
 from item_data import items_unpackable
-from logicCommon import ammo_req, can_bomb, can_use_pbs, energy_req, hell_run_energy, varia_or_hell_run
+from logicCommon import ammo_req, can_bomb, can_use_pbs, crystal_flash, energy_req, hell_run_energy, varia_or_hell_run
 from logic_shortcut import LogicShortcut
 from logic_shortcut_data import (
     canFly, shootThroughWalls, breakIce, missileDamage, pinkDoor,
-    missileBarrier, electricHyper, killRippers, killYellowPirates,
-    plasmaWaveGate, icePod, can_crash_spaceport, hiJumpSuperSink,
-    bonkCeilingSuperSink, underwaterSuperSink
+    missileBarrier, electricHyper, killRippers, killGreenOrRedPirates,
+    killYellowPirates, plasmaWaveGate, icePod, can_crash_spaceport,
+    hiJumpSuperSink, bonkCeilingSuperSink, underwaterSuperSink
 )
 from trick_data import Tricks
 
 (
     Missile, Super, PowerBomb, Morph, GravityBoots, Speedball, Bombs, HiJump,
-    GravitySuit, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
+    Aqua, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
     MetroidSuit, Plasma, Screw, Hypercharge, Charge, Xray, SpaceJump, Energy,
     Refuel, SmallAmmo, LargeAmmo, DamageAmp, AccelCharge, SpaceJumpBoost,
     spaceDrop
@@ -39,7 +39,9 @@ class SkyWorld:
             ))
         )) and
         # exit in grand promenade
-        ((Screw in loadout) or (can_bomb(1) in loadout))
+        ((Screw in loadout) or (can_bomb(1) in loadout)) and
+        (varia_or_hell_run(98) in loadout)
+        # right is never used without left, so only putting hell run in left
     ))
     """ including the exit in grand promenade """
 
@@ -48,15 +50,23 @@ class SkyWorld:
         ((Screw in loadout) or (hiJumpSuperSink in loadout)) and
         # meeting hall
         ((
-            # through top right
+            # through top
             (Morph in loadout) and
             ((can_bomb(1) in loadout) or (Screw in loadout)) and  # break bomb blocks
-            ((Speedball in loadout) or (can_bomb(1) in loadout))  # 2-tile space morph jump
+            ((Speedball in loadout) or (can_bomb(1) in loadout) or (  # 2-tile space morph jump
+                (Tricks.super_sink_easy in loadout) and (varia_or_hell_run(150) in loadout)
+            ))
         ) or (
-            # not through top right
+            # not through top
             # through plasma tunnel
             (breakIce in loadout) and
-            ((Morph in loadout) or (Tricks.morphless_tunnel_crawl in loadout))
+            ((Morph in loadout) or (
+                (Tricks.morphless_tunnel_crawl in loadout) and
+                (
+                    (varia_or_hell_run(350) in loadout) or
+                    (Tricks.movement_zoast in loadout)
+                )
+            ))
         ))
     ))
     """ including the entrance in grand promenade """
@@ -88,7 +98,7 @@ class SkyWorld:
 
     condenser = LogicShortcut(lambda loadout: (
         (  # up into the door from the platform below the door
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             ((Speedball in loadout) and (Tricks.sbj_underwater_no_hjb in loadout)) or
             (HiJump in loadout)
         ) and
@@ -96,7 +106,7 @@ class SkyWorld:
             ((Ice in loadout) and (Tricks.movement_moderate in loadout)) or
             # movement just because there are so many enemies in the room
             (
-                (GravitySuit in loadout) and
+                (Aqua in loadout) and
                 # aqua suit alone won't do it
                 (loadout.has_any(Tricks.gravity_jump, HiJump, Ice, Grapple, canFly, Tricks.short_charge_2))
                 # Yes. Some day we will find that person that can't do a gravity jump, but can do a 2-tap short charge.
@@ -125,15 +135,23 @@ class SkyWorld:
         # TODO: Should these numbers depend on damage amp and accel charge?
         (
             (MetroidSuit in loadout) and
-            (Varia in loadout) and
+            ((varia_or_hell_run(2001) in loadout) or (
+                (Hypercharge in loadout) and  # increases damage of the hyper beam you get from Metroid Suit
+                (varia_or_hell_run(1520) in loadout)
+            )) and
             ((energy_req(850) in loadout) or (
                 (Tricks.movement_moderate in loadout) and
-                (energy_req(650) in loadout)
+                ((energy_req(650) in loadout) or (
+                    (crystal_flash in loadout) and
+                    (energy_req(450) in loadout)
+                ))
             ) or (
                 (Tricks.movement_zoast in loadout) and
-                (energy_req(450) in loadout)
+                ((energy_req(450) in loadout) or (
+                    (crystal_flash in loadout) and
+                    (energy_req(350) in loadout)
+                ))
             ))
-            # TODO: energy w/o varia?
         ) or (
             (Charge in loadout) and
             (Hypercharge in loadout) and
@@ -195,6 +213,12 @@ class SkyWorld:
         )
     ))
 
+    westTerminal = LogicShortcut(lambda loadout: (
+        (killGreenOrRedPirates(3) in loadout) or
+        (energy_req(180) in loadout) or
+        (Tricks.movement_moderate in loadout)
+    ))
+
 
 class Early:
     cisternAccessTunnel = LogicShortcut(lambda loadout: (
@@ -212,16 +236,24 @@ class Early:
             ((Speedball in loadout) or (
                 # This wave gate glitch seems a little bit harder than other, but still not hard
                 ((shootThroughWalls in loadout) or (Tricks.wave_gate_glitch in loadout)) and
-                ((GravitySuit in loadout) or (
+                ((Aqua in loadout) or (
                     (Tricks.crouch_or_downgrab in loadout) and
                     ((HiJump in loadout) or (Ice in loadout))
                 ))
             ))
         ) or (
             # no bombs or speedbooster needed
-            (GravitySuit in loadout) and
+            (Aqua in loadout) and
             (GravityBoots in loadout) and
-            (Screw in loadout) and
+            (
+                (Screw in loadout) or
+                (
+                    (Tricks.super_sink_easy in loadout) and
+                    (Tricks.morphless_tunnel_crawl in loadout)
+                    # turnaround cancel to move door-stuck super sink pose away from door
+                ) or
+                (bonkCeilingSuperSink in loadout)
+            ) and
             (Morph in loadout) and
             (
                 (Speedball in loadout) or
@@ -229,7 +261,11 @@ class Early:
                 (Tricks.wave_gate_glitch in loadout)
             ) and
             (
-                (Tricks.morph_jump_3_tile in loadout) or
+                (
+                    (Tricks.morph_jump_3_tile in loadout) and
+                    (Tricks.movement_zoast in loadout)
+                    # have to get this morph jump, with no opposite wall, fast before shot block respawns
+                ) or
                 (Speedball in loadout) or
                 (can_bomb(1) in loadout)
             ) and
@@ -240,10 +276,18 @@ class Early:
     ))
 
     concourseShinespark = LogicShortcut(lambda loadout: (
-        (SpeedBooster in loadout) and
-        # less than 180 is needed for this shinespark, (can be done with no energy tank)
-        # but then you're very likely to need more health to shinespark in the next room (when it's not area rando)
-        ((energy_req(180) in loadout) or (SkyWorld.mezzanineShaft_withoutSpeedbooster in loadout)) and
+        ((
+            (SpeedBooster in loadout) and
+            # less than 180 is needed for this shinespark, (can be done with no energy tank)
+            # but then you're very likely to need more health to shinespark in the next room (when it's not area rando)
+            ((energy_req(180) in loadout) or (SkyWorld.mezzanineShaft_withoutSpeedbooster in loadout))
+        ) or (
+            (Tricks.xray_climb in loadout) and
+            (
+                (Tricks.patience in loadout) or  # from causeway door
+                (pinkDoor in loadout)  # from door to hall of elders
+            )
+        )) and
         (Morph in loadout)  # back down
     ))
     """ access to the top of ruined concourse """
@@ -258,6 +302,22 @@ class Early:
         )
     ))
     """ through the small morph tunnel before entering spore field """
+
+    craterLedge = LogicShortcut(lambda loadout: (
+        ((
+            (Tricks.infinite_bomb_jump in loadout)
+        ) or (
+            (SpaceJump in loadout) and
+            ((HiJump in loadout) or (SpaceJumpBoost in loadout) or (Tricks.wall_jump_precise in loadout))
+        ) or (
+            # shinespark from just the right pixel on the 1 tile between 2 slopes
+            (SpeedBooster in loadout) and (Tricks.movement_moderate in loadout)
+        ) or (
+            # https://vimeo.com/765888671
+            loadout.has_all(HiJump, Tricks.wall_jump_precise, Tricks.movement_moderate, Morph)
+        ))
+    ))
+    """ get up to the ledge in top left of impact crater """
 
 
 # TODO: SandLand location logic doesn't use these shortcuts as much as they should
@@ -287,11 +347,12 @@ class SandLand:
                 (HiJump in loadout) or  # debating attaching a trick to this for the difficulty of the jumps
                 (SpeedBooster in loadout)
             )
-        ) or
+        )
 
         # Gravity boots are not required to get this.
         # The only difficulty is shooting the wall in the right place (when you'll fall quickly).
-        ((SpeedBooster in loadout) and (Tricks.movement_moderate in loadout))
+        # (Tricks.ocean_top_without_grav_boots in loadout)
+        # This doesn't work. Some items spawn slower, so you can't pick it up before falling.
     ))
     """
     I wouldn't make a logic shortcut just for a single location.
@@ -302,7 +363,7 @@ class SandLand:
     """
 
     sedimentTunnel = LogicShortcut(lambda loadout: (
-        loadout.has_all(GravitySuit, Morph, GravityBoots) and
+        loadout.has_all(Aqua, Morph, GravityBoots) and
         ((Speedball in loadout) or (Tricks.movement_zoast in loadout))
         # I don't know how Rusty and Joonie did this without speedball
     ))
@@ -312,7 +373,7 @@ class SandLand:
         (GravityBoots in loadout) and
         ((DarkVisor in loadout) or (Tricks.dark_medium in loadout)) and
         (  # bottom to Dark Hollow
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             ((HiJump in loadout) and (Tricks.crouch_precise in loadout)) or
             (Tricks.sbj_underwater_no_hjb in loadout) or
             (Tricks.freeze_hard in loadout)  # crab
@@ -320,7 +381,7 @@ class SandLand:
         ) and
         (pinkDoor in loadout) and  # between submarine crevice and murky gallery
         (  # up from submarine crevice
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (
                 (HiJump in loadout) and
                 (
@@ -337,13 +398,13 @@ class SandLand:
         (GravityBoots in loadout) and
         ((DarkVisor in loadout) or (Tricks.dark_medium in loadout)) and
         (  # to not get stuck in sediment sand pits
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (HiJump in loadout)
         ) and
         (Morph in loadout) and  # top of meandering passage
         (pinkDoor in loadout) and  # between submarine crevice and murky gallery
         (  # murky gallery
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (
                 (HiJump in loadout) and
                 (Tricks.crouch_or_downgrab in loadout) and  # up from murky gallery
@@ -360,7 +421,7 @@ class SandLand:
         (GravityBoots in loadout) and
         (pinkDoor in loadout) and  # between sediment floor and sediment canyon
         (  # to not get stuck in sand pit
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (HiJump in loadout)
         )
     ))
@@ -369,7 +430,7 @@ class SandLand:
     canyonToGreenMoon = LogicShortcut(lambda loadout: (
         (GravityBoots in loadout) and
         (
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (
                 (HiJump in loadout) and
                 (
@@ -396,7 +457,7 @@ class SandLand:
         ) or (
             # bottom path (no pink door needed)
             (Morph in loadout) and
-            ((GravitySuit in loadout) or (HiJump in loadout) or (Tricks.sbj_underwater_no_hjb in loadout))
+            ((Aqua in loadout) or (HiJump in loadout) or (Tricks.sbj_underwater_no_hjb in loadout))
             # TODO: confirm springball jump can get you back through bottom path
         ))
     ))
@@ -405,22 +466,22 @@ class SandLand:
     shaftToLowerLower = LogicShortcut(lambda loadout: (
         (GravityBoots in loadout) and
         (pinkDoor in loadout) and  # between shaft and sea cave narrows
-        ((GravitySuit in loadout) or (HiJump in loadout) or (Tricks.sbj_underwater_no_hjb in loadout)) and
+        ((Aqua in loadout) or (HiJump in loadout) or (Tricks.sbj_underwater_no_hjb in loadout)) and
         # TODO: confirm springball jump can get you over narrows
         (pinkDoor in loadout) and  # between sea caves upper and sea caves lower
         (Morph in loadout) and  # passage right next to door in lower sea caves
         (  # top of lower hall, to bottom-right of lower hall
-            ((GravitySuit in loadout) and (Screw in loadout)) or
+            ((Aqua in loadout) and (Screw in loadout)) or
             (
                 (DarkVisor in loadout) and
                 (Morph in loadout) and
                 (
                     (Speedball in loadout) or
-                    ((GravitySuit in loadout) and (can_bomb(1) in loadout))
+                    ((Aqua in loadout) and (can_bomb(1) in loadout))
                 ) and
 
                 # going up, shoot the switch through the wall, or use the shinespark path
-                ((shootThroughWalls in loadout) or loadout.has_all(GravitySuit, SpeedBooster))
+                ((shootThroughWalls in loadout) or loadout.has_all(Aqua, SpeedBooster))
             )
             # joonie did the super sink into the visor switch tunnel
             # but with save states, and bob said he doesn't have a good setup for it
@@ -434,7 +495,7 @@ class SandLand:
         (
             (Speedball in loadout) or
             (
-                loadout.has_all(GravitySuit, Bombs, Tricks.movement_zoast)
+                loadout.has_all(Aqua, Bombs, Tricks.movement_zoast)
                 # Is this harder than movement_zoast? is it Tricks.bob?
                 # Joonie did it after like 15 minutes of trying.
                 # Azder made it look easy.
@@ -449,7 +510,7 @@ class SandLand:
         (GravityBoots in loadout) and
         (can_bomb(2) in loadout) and  # submarine crevice, in and out with nowhere to farm between
         (Super in loadout) and  # submarine crevice bottom left
-        ((GravitySuit in loadout) or (
+        ((Aqua in loadout) or (
             (HiJump in loadout) and
             # out of benthic shaft without aqua before the balls block you in
             (Tricks.movement_moderate in loadout) and
@@ -463,12 +524,12 @@ class SandLand:
     turbidToSedFloor = LogicShortcut(lambda loadout: (
         (GravityBoots in loadout) and
         (Morph in loadout) and
-        ((GravitySuit in loadout) or (
+        ((Aqua in loadout) or (
             (HiJump in loadout) and
             ((Tricks.movement_moderate in loadout) or (
                 (Super in loadout) and
                 (SandLand.eddy in loadout)
-                # If no aqua suit, assume the player will fall into eddy channels
+                # If no aqua suit, need hi jump to not fall into eddy channels
                 # get out of eddy, and Supers to get back into Sediment Floor
             ))
         ))
@@ -490,11 +551,11 @@ class SandLand:
             ((Tricks.moonfall_clip in loadout) or (underwaterSuperSink in loadout)) and
             (GravityBoots in loadout) and
             (  # get to the starting island
-                (GravitySuit in loadout) or  # anything else needed with aqua? tricks?
+                (Aqua in loadout) or  # anything else needed with aqua? tricks?
                 (SandLand.oceanShoreTop in loadout)
                 # TODO: other ways to get up to the island?
             ) and
-            ((Morph in loadout) or (GravitySuit in loadout)) and
+            ((Morph in loadout) or (Aqua in loadout)) and
             # without aqua, I couldn't do it without morph
             # I saw rusty do it with aqua, no morph
             # TODO: Can it be done with neither morph nor aqua?
@@ -531,8 +592,8 @@ class ServiceSector:
                 loadout.has_any(SpaceJumpBoost, HiJump)
             )) or
             (SpeedBooster in loadout) or
-            (Bombs in loadout)
-            # TODO: ice with sbj (no hjb)?
+            (Tricks.infinite_bomb_jump in loadout) or
+            ((Ice in loadout) and (Tricks.sbj_no_hjb in loadout))
         )
     ))
     """ traverse from one door of waste processing to the other (not including colored door) """
@@ -607,7 +668,7 @@ class Verdite:
             (breakIce in loadout) and
             (Morph in loadout) and
             ((
-                (GravitySuit in loadout) and
+                (Aqua in loadout) and
                 ((can_bomb(3) in loadout) or loadout.has_all(Screw, can_bomb(1)))
             ) or (Speedball in loadout) or (Tricks.morph_jump_3_tile_water in loadout)) and
             ((
@@ -619,18 +680,18 @@ class Verdite:
             # bomb block hole
             (Morph in loadout) and
             ((
-                (GravitySuit in loadout) and
+                (Aqua in loadout) and
                 ((can_bomb(3) in loadout) or loadout.has_all(Screw, can_bomb(1)))
             ) or (Speedball in loadout) or (Tricks.morph_jump_3_tile_water in loadout)) and
             ((
                 (can_bomb(3) in loadout)
             ) or (
-                (Screw in loadout) and (GravitySuit in loadout)  # need aqua to come up through this hole with screw
+                (Screw in loadout) and (Aqua in loadout)  # need aqua to come up through this hole with screw
             ))
         )) and
         # TODO: rusty said there's a way to get through hive entrance with speed booster, I don't see how
         (
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (Tricks.sbj_underwater_no_hjb in loadout) or
             (Tricks.sbj_underwater_w_hjb in loadout) or
             ((HiJump in loadout) and (Ice in loadout)) or
@@ -642,8 +703,12 @@ class Verdite:
     # TODO: all the places where we only check for this and sporous nook should also check from raging pit
     # because it could require less energy if we have PBs
     fieryTrail = LogicShortcut(lambda loadout: (
-        (varia_or_hell_run(550, heat_and_metroid_suit_not_required=True) in loadout)
-        # TODO: a different amount if I have screw and space jump and shootThroughWalls
+        (varia_or_hell_run(550, heat_and_metroid_suit_not_required=True) in loadout) or
+        (
+            loadout.has_all(
+                SpaceJump, Screw, shootThroughWalls, varia_or_hell_run(310, heat_and_metroid_suit_not_required=True)
+            )
+        )
     ))
     """ fiery gallery and burning trail """
 
@@ -670,7 +735,8 @@ class Verdite:
         # something to avoid taking damage from the
         # lava at the bottom of mining site beta during hell run
         (
-            loadout.has_any(Speedball, MetroidSuit, Tricks.mockball_hard, energy_req(1050)) or
+            loadout.has_all(Speedball, Morph) or
+            loadout.has_any(MetroidSuit, Tricks.mockball_hard, energy_req(hell_run_energy(1050, loadout))) or
             # If you don't have a way to avoid the lava damage, you'll need some energy to fall in the lava.
             ((Varia in loadout) and (energy_req(hell_run_energy(183, loadout)) in loadout))
         ) and
@@ -702,7 +768,7 @@ class Verdite:
         ((icePod in loadout) or (
             (can_use_pbs(2) in loadout) and
             (
-                (GravitySuit in loadout) or
+                (Aqua in loadout) or
                 ((HiJump in loadout) and (Tricks.crouch_or_downgrab in loadout))
                 # hint: for hi jump, lay power bomb on the second tile away from the power bomb blocks
             )
@@ -718,16 +784,16 @@ class PirateLab:
         (  # through the passage lined with screw blocks
             (
                 # This morph jump out of wall jump is harder without aqua suit.
-                ((GravitySuit in loadout) or (Tricks.movement_zoast in loadout)) and
+                ((Aqua in loadout) or (Tricks.movement_zoast in loadout)) and
                 (Morph in loadout) and
                 (Tricks.morph_jump_4_tile in loadout)
             ) or (
                 (Screw in loadout)
             ) or (
                 ((Speedball in loadout) or (
-                    (Bombs in loadout) and (GravitySuit in loadout)  # normal bomb jumping if have aqua
+                    (Bombs in loadout) and (Aqua in loadout)  # normal bomb jumping if have aqua
                 )) and
-                ((Bombs in loadout) or (GravitySuit)) and  # if no aqua, a combination of bouncing and bombs is easy
+                ((Bombs in loadout) or (Aqua in loadout)) and  # if no aqua, a combination of bouncing and bombs is easy
                 (Morph in loadout)
             ) or (
                 (Tricks.movement_moderate in loadout) and
@@ -745,14 +811,14 @@ class PirateLab:
         (Morph in loadout) and
         (
             # with no high jump, in the right shot block passage,
-            # wall jump into morph
+            # wall jump into morph or don't shoot shot blocks that are easier to stand on
             (
                 (Tricks.movement_moderate in loadout) and
                 loadout.has_any(Tricks.morph_jump_4_tile, Speedball, Bombs) and
                 (Tricks.crouch_or_downgrab in loadout)  # right to left under water
             ) or
 
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (
                 (HiJump in loadout) and
                 (Speedball in loadout) and
@@ -765,11 +831,22 @@ class PirateLab:
 
     isobaric = LogicShortcut(lambda loadout: (
         (Morph in loadout) and
+
+        # left to right
+        (can_bomb(1) in loadout) and  # stand to shoot switch
         (
             (shootThroughWalls in loadout) or
             (Tricks.spazer_into_lower_pirate_lab in loadout)
         ) and
-        (Bombs in loadout)  # open gate from right side (and the 2-tile morph jump to get into that passage)
+
+        # 2-tile morph jump to get into the passage, or jump from further away like monitoring station
+        ((Speedball in loadout) or (can_bomb(1) in loadout) or (Tricks.movement_zoast in loadout)) and
+
+        ((Bombs in loadout) or (
+            (crystal_flash in loadout) and
+            # get in isobaric vent from right and still have 100 ammo left for CF
+            ((Speedball in loadout) or (ammo_req(110) in loadout))
+        ))  # open gate from right side
     ))
     """ gate into the pirate lab """
 
@@ -780,11 +857,15 @@ class PirateLab:
     """ epiphreatic crag left and right, in and out of pirate lab """
 
     exitMainHydrologyResearch = LogicShortcut(lambda loadout: (
-        (GravitySuit in loadout) or
+        (Aqua in loadout) or
         (Ice in loadout) or  # freeze pancake to stand on
         (Tricks.sbj_underwater_w_hjb in loadout) or
         # joonie gave up on trying to get out with SBJ no HJB, he wondered if bob could do it
         ((Tricks.uwu_2_tile in loadout) and (HiJump in loadout))
+
+        # another way to get out is uwu-2 up to hydrology security,
+        # but that's not worth putting in logic because with all the same items and skills,
+        # you can uwu-2 to hydrodynamic chamber
     ))
 
     waterGauntlet_oneWay = LogicShortcut(lambda loadout: (
@@ -794,16 +875,16 @@ class PirateLab:
         (  # first room
             (HiJump in loadout) or
 
-            # gravity jump through door - not gravity jump trick, because that requires gravity suit
+            # gravity jump through door - not gravity jump trick, because that requires Aqua Suit
             (Tricks.movement_moderate in loadout) or
 
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             (Tricks.sbj_underwater_no_hjb in loadout)
         ) and
         (  # last room
             (HiJump in loadout) or
             (Tricks.sbj_underwater_no_hjb in loadout) or
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             ((
                 (can_use_pbs(2) in loadout)
             ) and (
@@ -820,7 +901,7 @@ class PirateLab:
     """
 
     hydrodynamicChamber = LogicShortcut(lambda loadout: (
-        (GravitySuit in loadout) or
+        (Aqua in loadout) or
         (HiJump in loadout) or
         (loadout.has_all(Ice, Tricks.crouch_or_downgrab, Tricks.movement_moderate)) or
         ((Speedball in loadout) and (Tricks.sbj_underwater_no_hjb in loadout))
@@ -846,16 +927,18 @@ class PirateLab:
 
     centralTopToMid = LogicShortcut(lambda loadout: (
         (Screw in loadout) or
-        ((Tricks.super_sink_easy in loadout) and (Tricks.xray_climb in loadout))
+        ((bonkCeilingSuperSink in loadout) and (Tricks.xray_climb in loadout))
+        # you might be able to do a super sink from a door stuck,
+        # but that might get you stuck in the middle and require a harder super sink
     ))
 
     centralCorridorWater = LogicShortcut(lambda loadout: (
         ((
             (Tricks.movement_zoast in loadout)  # gravity jump through door
-            # https://vimeo.com/user130979419
-            # (not gravity jump trick because that requires gravity suit)
+            # https://vimeo.com/776860978
+            # (not gravity jump trick because that requires Aqua Suit)
         ) or (
-            (GravitySuit in loadout)
+            (Aqua in loadout)
         ) or (
             (Ice in loadout)  # freeze atomic
         ) or (
@@ -929,7 +1012,7 @@ class LifeTemple:
     """ bottom of chamber of stone to bottom of veranda (top of chamber of stone) """
 
     waterGardenBottom = LogicShortcut(lambda loadout: (
-        ((GravitySuit in loadout) or (Ice in loadout) or (Tricks.sbj_underwater_w_hjb in loadout)) and
+        ((Aqua in loadout) or (Ice in loadout) or (Tricks.sbj_underwater_w_hjb in loadout)) and
         # There's a hole above the door that prevents xray climbing up.
         ((
             (Tricks.morph_jump_4_tile in loadout) and
@@ -943,11 +1026,23 @@ class LifeTemple:
             ((Speedball in loadout) or (Bombs in loadout))
         )) and
         (
+            # hard morph jump from door to wellspring access into morph tunnel
+            (Aqua in loadout) or
+            (Speedball in loadout) or
+            (Tricks.movement_zoast in loadout) or
+
+            # hold spin with 1-tile-wide wall jump in hole waiting for water to go down,
+            # then fall down near surface of water and space jump into morph
+            # (easier with hi-jump boots unequipped)
+            ((SpaceJump in loadout) and (Tricks.movement_moderate in loadout))
+
+        ) and
+        (
             ((SpeedBooster in loadout) and (LifeTemple.waterToVeranda in loadout)) or  # top door
             (HiJump in loadout) or
             (Tricks.wall_jump_precise in loadout) or  # around 2-tile ledge with no hjb
             ((SpaceJump in loadout) and (SpaceJumpBoost in loadout)) or
-            (loadout.has_all(Morph, Bombs) and loadout.has_any(GravitySuit, Tricks.movement_moderate))
+            (loadout.has_all(Tricks.infinite_bomb_jump) and loadout.has_any(Aqua, Tricks.movement_moderate))
             # have to start bomb jump mid-air if no aqua
         )
     ))
@@ -956,30 +1051,32 @@ class LifeTemple:
     brook = LogicShortcut(lambda loadout: (
         (GravityBoots in loadout) and
         (Morph in loadout) and
-        ((
-            (GravitySuit in loadout)
-        ) or (
-            (SpaceJump in loadout) and
-            (HiJump in loadout)
-        ) or (
-            (Ice in loadout) and
-            (Tricks.freeze_hard in loadout)
-        ) or (
-            (HiJump in loadout) and
-            (Tricks.movement_moderate in loadout)
-        ) or (
-            (Speedball in loadout) and
-            (Tricks.sbj_underwater_no_hjb in loadout)  # is this harder at the surface of the water?
-        ) or (
-            (SpaceJump in loadout) and
-            (Tricks.movement_moderate in loadout)
-        ) or (
-            (Bombs in loadout) and
-            (Tricks.movement_zoast in loadout)  # TODO: I don't know what trick this is
-        ) or (
-            (SpeedBooster in loadout) and  # 1-tap short charge from norak perimeter
-            (Tricks.movement_moderate in loadout)
+        (loadout.has_any(Tricks.wall_jump_precise, HiJump, SpaceJump, Tricks.infinite_bomb_jump) or (
+            (SpeedBooster in loadout) and (Tricks.movement_moderate in loadout)
         ))
+
+        # old stuff that was required before lowering the water in norak brook
+        # ((
+        #     (Aqua in loadout)
+        # ) or (
+        #     (SpaceJump in loadout) and
+        #     (HiJump in loadout)
+        # ) or (
+        #     (Ice in loadout) and
+        #     (Tricks.freeze_hard in loadout)
+        # ) or (
+        #     (HiJump in loadout) and
+        #     (Tricks.movement_moderate in loadout)
+        # ) or (
+        #     (Speedball in loadout) and
+        #     (Tricks.sbj_underwater_no_hjb in loadout)  # is this harder at the surface of the water?
+        # ) or (
+        #     (SpaceJump in loadout) and
+        #     (Tricks.movement_moderate in loadout)
+        # ) or (
+        #     (SpeedBooster in loadout) and  # 1-tap short charge from norak perimeter
+        #     (Tricks.movement_moderate in loadout)
+        # ))
     ))
     """ to get across Norak Brook (bottom right to left) """
 
@@ -1137,6 +1234,28 @@ class FireHive:
     ))
     """ from elevator to infested passage """
 
+    westHiveTunnel = LogicShortcut(lambda loadout: (
+        # This hell run is 452 + the 1-way hell run in hive entrance
+        (varia_or_hell_run(1002, heat_and_metroid_suit_not_required=True) in loadout) and
+
+        # There are a few ways to do this:
+        #  - spike suit from sealed shaft (short charge through 2 doors)
+        #  - spike suit from guard station bridge and path of fire (screw attack through red pirate)
+        #  - gravity fall from infested passage (screw attack through rippers, space jump to avoid clipping into ground)
+        (Tricks.movement_zoast in loadout) and
+        ((Tricks.short_charge_4 in loadout) or (
+            (Tricks.short_charge_2 in loadout) and
+            (Screw in loadout) and
+            ((pinkDoor in loadout) or (
+                (SpaceJump in loadout) and
+                (FireHive.crossways in loadout)
+            ))
+        )) and
+        (Morph in loadout) and
+        (GravityBoots in loadout)
+    ))
+    """ get around the ice pods in infested passage (expert only) """
+
     ancientBasinAccess = LogicShortcut(lambda loadout: (
         (
             (can_bomb(3) in loadout) or
@@ -1201,14 +1320,14 @@ class Geothermal:
             (SpeedBooster in loadout) or
             (SpaceJump in loadout) or
             (Grapple in loadout) or
-            (loadout.has_all(GravitySuit, Morph, Bombs)) or
-            ((GravitySuit in loadout) and (Tricks.gravity_jump in loadout))
+            (loadout.has_all(Aqua, Tricks.infinite_bomb_jump)) or
+            ((Aqua in loadout) and (Tricks.gravity_jump in loadout))
         )
     ))
     """ includes metroid suit for laser right outside left door """
 
     thermalResBeta = LogicShortcut(lambda loadout: (
-        ((GravitySuit in loadout) or (
+        ((Aqua in loadout) or (
             (Tricks.freeze_hard in loadout) and
             (Ice in loadout) and
             ((Tricks.movement_zoast in loadout) or (HiJump in loadout)) and
@@ -1240,7 +1359,7 @@ class Geothermal:
         # TODO: super sink and xray climb up and down thermal res beta
         (Geothermal.thermalResBeta in loadout) and
         (
-            (GravitySuit in loadout) or
+            (Aqua in loadout) or
             loadout.has_all(HiJump, Tricks.freeze_hard, Tricks.movement_moderate)  # uwu 1 tile wide
         ) and
         (can_use_pbs(2) in loadout) and
@@ -1269,13 +1388,22 @@ class DrayLand:
     """ to lower lava in magma chamber """
 
     killGT = LogicShortcut(lambda loadout: (
-        loadout.has_all(Varia, Charge)
-        # TODO: can hell run with hypercharge, or lots of beams and damage amps, or a billion supers,
-        # or patience and varia+missiles
+        # TODO: measure hell run (whichever is the slowest out of the options that don't require varia)
+        (varia_or_hell_run(450) in loadout) and
+        (
+            loadout.has_all(Varia, Charge) or
+            loadout.has_all(Charge, Hypercharge) or
+            (
+                loadout.has_all(Charge, Ice, Wave, DamageAmp, AccelCharge) and
+                ((Spazer in loadout) or (Plasma in loadout))
+            ) or
+            loadout.has_all(Super, ammo_req(200), varia_or_hell_run(850)) or
+            loadout.has_all(Tricks.patience, Varia, Missile)
+        )
     ))
 
     killDraygon = LogicShortcut(lambda loadout: (
-        ((GravitySuit in loadout) or (
+        ((Aqua in loadout) or (
             (Tricks.movement_moderate in loadout) and (energy_req(850) in loadout)
         ) or (
             (Tricks.movement_zoast in loadout) and (energy_req(161) in loadout)
@@ -1289,6 +1417,17 @@ class DrayLand:
             (energy_req(450) in loadout)
         ) or (
             (Tricks.movement_zoast in loadout)
+        )) and
+        ((
+            (Varia in loadout)
+        ) or (
+            (Charge in loadout) and
+            (Hypercharge in loadout)
+        ) or (
+            (ammo_req(350) in loadout) and
+            (Tricks.movement_zoast in loadout) and
+            (Screw in loadout) and
+            (Aqua in loadout)
         ))
         # TODO: improve this logic
     ))
@@ -1301,6 +1440,27 @@ class SpacePort:
         # TODO: if I get up with xray, or (ice and super), then i can get back down with moonfall
     ))
 
+    loadingDock = LogicShortcut(lambda loadout: (
+        (
+            (GravityBoots in loadout) or
+            # don't need gravity boots if you shinespark up security area
+            ((SpeedBooster in loadout) and (MetroidSuit in loadout))
+        ) and
+        (
+            (MetroidSuit in loadout) or
+            (
+                # spike suit laser skip up and super sink down
+                (SpeedBooster in loadout) and
+                (Morph in loadout) and
+                (Tricks.movement_zoast in loadout) and
+                (bonkCeilingSuperSink in loadout)
+                # super sink in the column where the door to loading dock is
+                # further left will get stuck in the laser, further right will get too much velocity from the slope
+            )
+        )
+    ))
+    """ bottom of loading dock security area to loading dock """
+
 
 class Suzi:
     crossOceans = LogicShortcut(lambda loadout: (
@@ -1311,8 +1471,7 @@ class Suzi:
             # TODO: how many sjb required?
             # TODO: how many sjb required without hjb?
         ) or (
-            (Bombs in loadout) and
-            (Morph in loadout) and
+            (Tricks.infinite_bomb_jump in loadout) and
             (Tricks.movement_moderate in loadout)
             # TODO: how hard is this in spine reef? Do we need separate for spine reef and moughra lagoon?
         ) or (
@@ -1327,9 +1486,9 @@ class Suzi:
         loadout.has_all(GravityBoots,
                         SpeedBooster,
                         Super,
-                        shootThroughWalls,
+                        Wave,  # Vesper Point is possible without Wave, but pretty hard
                         can_use_pbs(1),
-                        GravitySuit,
+                        Aqua,
                         pinkDoor,
                         Suzi.crossOceans)
     ))

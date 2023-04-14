@@ -6,14 +6,16 @@ from trick_data import Tricks
 
 (
     Missile, Super, PowerBomb, Morph, GravityBoots, Speedball, Bombs, HiJump,
-    GravitySuit, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
+    Aqua, DarkVisor, Wave, SpeedBooster, Spazer, Varia, Ice, Grapple,
     MetroidSuit, Plasma, Screw, Hypercharge, Charge, Xray, SpaceJump, Energy,
     Refuel, SmallAmmo, LargeAmmo, DamageAmp, AccelCharge, SpaceJumpBoost,
     spaceDrop
 ) = items_unpackable
 
 canFly = LogicShortcut(lambda loadout: (
-    (GravityBoots in loadout) and ((SpaceJump in loadout) or loadout.has_all(Morph, Bombs))
+    (GravityBoots in loadout) and (
+        (SpaceJump in loadout) or (Tricks.infinite_bomb_jump in loadout)
+    )
 ))
 shootThroughWalls = LogicShortcut(lambda loadout: (
     (Wave in loadout) or ((Charge in loadout) and (Hypercharge in loadout))
@@ -51,6 +53,10 @@ plasmaWaveGate = LogicShortcut(lambda loadout: (
 ))
 """ the switches that are blocked by plasma+wave barriers """
 
+plasmaSBA = LogicShortcut(lambda loadout: (
+    loadout.has_all(Plasma, Charge, PowerBomb)
+))
+
 hiJumpSuperSink = LogicShortcut(lambda loadout: (
     (Tricks.super_sink_hard in loadout) and
     (HiJump in loadout) and
@@ -78,9 +84,9 @@ underwaterSuperSink = LogicShortcut(lambda loadout: (
         (Tricks.patience in loadout) or
         (Xray in loadout) or
         (Tricks.movement_zoast in loadout)
-    )
+    ) and False  # TODO: see if this is not that hard and I didn't just happen to fail it 50 times in a row
 ))
-""" no bonk, no gravity suit, no hi jump """
+""" no bonk, no Aqua Suit, no hi jump """
 
 killRippers = LogicShortcut(lambda loadout: (
     (Super in loadout) or
@@ -90,16 +96,20 @@ killRippers = LogicShortcut(lambda loadout: (
 ))
 """ GET OUT OF MY WAY!! """
 
-killGreenPirates = LogicShortcut(lambda loadout: (
-    (missileDamage in loadout) or
-    (Charge in loadout) or
-    (Ice in loadout) or
-    (Wave in loadout) or
-    (Plasma in loadout) or
-    (can_bomb(1) in loadout) or
-    (Spazer in loadout) or
-    (Screw in loadout)
-))
+
+def killGreenOrRedPirates(super_count: int) -> LogicShortcut:
+    return LogicShortcut(lambda loadout: (
+        (Missile in loadout) or
+        ((Super in loadout) and (ammo_req(super_count * 5) in loadout)) or
+        (Charge in loadout) or
+        (Ice in loadout) or
+        (Wave in loadout) or
+        (Plasma in loadout) or
+        (can_bomb(1) in loadout) or
+        (Spazer in loadout) or
+        (Screw in loadout)
+    ))
+
 
 killYellowPirates = LogicShortcut(lambda loadout: (
     (Charge in loadout) or
@@ -150,7 +160,7 @@ can_win = LogicShortcut(lambda loadout: (
     # (aqua suit because of the acid that starts rising up)
     # (4 PBs is mostly for getting out after MB2, but also
     # because there was no opportunity to refill after the last one you used to get in)
-    ((Speedball in loadout) or (GravitySuit in loadout) or (can_bomb(4) in loadout)) and
+    ((Speedball in loadout) or (Aqua in loadout) or (can_bomb(4) in loadout)) and
     # MB1, zebs, and glass (separate from pinkDoor to prepare for door cap rando)
     (missileDamage in loadout) and
     # kill MB 2
@@ -158,7 +168,9 @@ can_win = LogicShortcut(lambda loadout: (
         # all the different ways to do damage
         (
             (Missile in loadout) and
-            (ammo_req(385) in loadout)  # these numbers padded for the PB logic getting in and out
+            (ammo_req(385) in loadout)
+            # these numbers padded for the PB logic getting in and out
+            # 330 missiles is what it takes
         ) or (
             (electricHyper in loadout)
         ) or (

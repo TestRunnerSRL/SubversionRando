@@ -55,8 +55,7 @@ def ammo_req(amount: int) -> LogicShortcut:
 
 
 crystal_flash = LogicShortcut(lambda loadout: (
-    # 110 because there are too many times when you'll need ammo for something else
-    loadout.has_all(Items.Morph, Items.PowerBomb, ammo_req(110))
+    loadout.has_all(Items.Morph, Items.PowerBomb, ammo_req(100))
 ))
 
 
@@ -66,19 +65,22 @@ def hell_run_energy(min_energy: int, loadout: "Loadout") -> int:
 
     based on tricks
     """
-    # not checking Metroid Suit because we would need to separate heat from cold
     if Tricks.hell_run_hard in loadout:
         return min_energy
     if Tricks.hell_run_medium in loadout:
         return (min_energy * 3) // 2
     if Tricks.hell_run_easy in loadout:
         return min_energy * 2
-    return 90001
+
+    # this number is tuned to make it so
+    # fiery trail with space jump and screw hell runs are barely unobtainable
+    # (but sky temple hell runs are obtainable)
+    return int(min_energy ** 1.5046)
 
 
 def _adjust_for_other_suits(energy_required: int, loadout: "Loadout", heat_and_metroid_suit_not_required: bool) -> int:
     helping_suit_count = (
-        int(Items.GravitySuit in loadout) +
+        int(Items.Aqua in loadout) +
         int(heat_and_metroid_suit_not_required and (Items.MetroidSuit in loadout))
     )
     return (energy_required * (4 - helping_suit_count)) // 4
@@ -107,7 +109,9 @@ def varia_or_hell_run(energy: int, *, heat_and_metroid_suit_not_required: bool =
             (energy_req(hell_run_energy(
                 _adjust_for_other_suits((energy + 100) // 2, loadout, heat_and_metroid_suit_not_required), loadout
             )) in loadout) and
-            (crystal_flash in loadout)
+            (crystal_flash in loadout) and
+            # 110 because there are too many times when you'll need ammo for something else during hell run
+            (ammo_req(110) in loadout)
         )
     ))
 
@@ -124,7 +128,7 @@ def lava_run(energy_with_aqua: int, energy_no_aqua: int) -> LogicShortcut:
     """
     return LogicShortcut(lambda loadout: (
         (
-            (Items.GravitySuit in loadout) and
+            (Items.Aqua in loadout) and
             (varia_or_hell_run((energy_with_aqua * 4) // 3) in loadout)
             # this math will be reversed when that function sees I have aqua suit
         ) or (

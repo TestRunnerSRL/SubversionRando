@@ -1,10 +1,18 @@
+import json
+import os
 import tkinter as tk
 from tkinter import ttk
-from game import CypherItems, GameOptions
-
-from gui_scroll_frame import ScrollFrame
-from gui_toggled_frame import ToggledFrame
+from typing import TypedDict
 try:
+    from typing import Literal
+except ImportError:
+    input("requires Python 3.9 or higher... press enter to quit")
+    exit(1)
+
+try:
+    from game import CypherItems, GameOptions
+    from gui_scroll_frame import ScrollFrame
+    from gui_toggled_frame import ToggledFrame
     import logic_presets
 except TypeError:
     input("requires Python 3.9 or higher... press enter to quit")
@@ -14,7 +22,14 @@ from trick import Trick
 from trick_data import Tricks
 
 
+SETTINGS_FILE_NAME = "gui_settings.json"
+
+
 _trick_to_name = {v: k for k, v in vars(Tricks).items() if isinstance(v, Trick)}
+
+
+class GuiSettings(TypedDict):
+    logic: dict[str, int]
 
 
 def main() -> None:
@@ -41,6 +56,34 @@ def main() -> None:
                 borderwidth=1, relief="solid", padding=2
             ).grid(sticky=tk.W, column=1, row=row_i)
             row_i += 1
+
+    def save_logic() -> None:
+        logic_data = {
+            k: v.get() for k, v in logic_selections.items()
+        }
+        data: GuiSettings = {
+            "logic": logic_data
+        }
+        with open(SETTINGS_FILE_NAME, "w") as settings_file:
+            json.dump(data, settings_file)
+
+    def load_logic() -> None:
+        if os.path.isfile(SETTINGS_FILE_NAME):
+            with open(SETTINGS_FILE_NAME) as settings_file:
+                content = settings_file.read()
+                data: GuiSettings = json.loads(content)
+                if isinstance(data, dict) and isinstance(data["logic"], dict):  # type: ignore
+                    logic = data["logic"]
+                    for k, v in logic.items():
+                        if k in logic_selections:
+                            if isinstance(v, int):  # type: ignore
+                                logic_selections[k].set(v)
+                            else:
+                                print(f"invalid value in {SETTINGS_FILE_NAME}, {k=}: {v=}")  # type: ignore
+                else:
+                    print(f"invalid data in {SETTINGS_FILE_NAME}:\n{content}")  # type: ignore
+
+    load_logic()
 
     def preset_buttons() -> None:
         ROW = 0
@@ -94,14 +137,19 @@ def main() -> None:
         logic_frame, variable=escape_shortcuts_value, text="escape shortcuts"
     ).grid(sticky=tk.E, column=2, row=2)
 
-    mmb_value = tk.IntVar()
+    fill_options: dict[str, Literal['M', 'MM', 'D', 'S', 'B']] = {
+        "full random": "D",
+        "major/minor bias": "B",
+        "major/minor": "MM"
+    }
 
-    ttk.Checkbutton(
-        logic_frame, variable=mmb_value, text="major/minor bias"
-    ).grid(sticky=tk.E, column=3, row=2)
+    fill_select = ttk.Combobox(logic_frame)
+    fill_select["values"] = tuple(fill_options.keys())
+    fill_select.set("full random")
+    fill_select.grid(sticky=tk.E, column=3, row=2)
 
-    cypher_label = ttk.Label(logic_frame, text="Shrine Of The Animate Spark and Enervation Chamber have:")
-    cypher_label.grid(sticky=tk.W, column=0, row=3, columnspan=4)
+    cypher_label = ttk.Label(logic_frame, text="Thunder Laboratory has:")
+    cypher_label.grid(sticky=tk.E, column=0, row=3, columnspan=2)
 
     cypher_options = {
         "Anything": CypherItems.Anything,
@@ -112,12 +160,14 @@ def main() -> None:
     cypher_select = ttk.Combobox(logic_frame)
     cypher_select["values"] = tuple(cypher_options.keys())
     cypher_select.set("Something not required")
-    cypher_select.grid(sticky=tk.W, column=0, row=4, columnspan=4)
+    cypher_select.grid(sticky=tk.W, column=2, row=3, columnspan=2)
 
     name_label = ttk.Label(logic_frame, text="")
     name_label.grid(column=0, row=5)
 
     def roll_button_action() -> None:
+        save_logic()
+
         logic: frozenset[Trick] = frozenset([
             getattr(Tricks, trick_name)
             for trick_name in logic_selections
@@ -128,7 +178,7 @@ def main() -> None:
 
         options = GameOptions(logic,
                               bool(area_rando_value.get()),
-                              "B" if mmb_value.get() else "D",
+                              fill_options[fill_select.get()],
                               bool(small_spaceport_value.get()),
                               bool(escape_shortcuts_value.get()),
                               cypher_option)
@@ -137,6 +187,13 @@ def main() -> None:
         name_label.config(text=name)
 
     ttk.Button(logic_frame, text="roll", command=roll_button_action).grid(column=1, row=5)
+
+    def on_closing() -> None:
+        save_logic()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+
     root.mainloop()
 
 

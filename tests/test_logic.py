@@ -54,7 +54,7 @@ def test_start_logic() -> None:
     print("  with planet")
     for loc in accessible:
         print(loc["fullitemname"])
-    assert len(accessible) == 4, "add Ocean Shore: Bottom"
+    assert len(accessible) == 5, "add Subterranean Burrow and Ocean Shore: Bottom"
 
     game, _ = setup(expert)
     loadout = Loadout(game, loadout.contents)
@@ -63,7 +63,7 @@ def test_start_logic() -> None:
     print("  with expert")
     for loc in accessible:
         print(loc["fullitemname"])
-    assert len(accessible) == 4, "nothing else? really?"
+    assert len(accessible) == 5, "nothing else? really?"
 
     loadout.append(Items.Morph)
     accessible = update_acc()
@@ -143,7 +143,7 @@ def test_crypt_no_bomb_no_wave() -> None:
     loadout.append(Items.Missile)
     loadout.append(Items.LargeAmmo)
     loadout.append(Items.HiJump)
-    loadout.append(Items.GravitySuit)
+    loadout.append(Items.Aqua)
 
     updateLogic(game.all_locations.values(), loadout)
     assert not game.all_locations["Crypt"]["inlogic"]
@@ -174,7 +174,7 @@ def test_warrior_shrine_speedball() -> None:
     loadout.append(Items.Missile)
     loadout.append(Items.HiJump)
     loadout.append(Items.Ice)
-    loadout.append(Items.GravitySuit)
+    loadout.append(Items.Aqua)
 
     updateLogic(game.all_locations.values(), loadout)
 
@@ -237,7 +237,7 @@ _unique_items = [
     Items.Speedball,
     Items.Bombs,
     Items.HiJump,
-    Items.GravitySuit,
+    Items.Aqua,
     Items.DarkVisor,
     Items.Wave,
     Items.SpeedBooster,
@@ -329,7 +329,6 @@ _possible_places = {
         "Weapon Locker",
 
         "Ocean Shore: Bottom",
-        "Ocean Shore: Top",  # not in casual
         "Subterranean Burrow",
     ])
 }
@@ -370,7 +369,7 @@ def test_restrictive_item_locations(logic: frozenset[Trick]) -> None:
         this_loadout()
 
         for loc_name in _possible_places[excluded_item]:
-            assert found[loc_name] or (logic is casual and loc_name == "Ocean Shore: Top"), \
+            assert found[loc_name], \
                 f"logic thinks {excluded_item[0]} can't be at {loc_name}"
 
 
@@ -392,6 +391,7 @@ _possible_places_area = {
             "Colosseum",
             "Depressurization Valve",
             "Antelier",
+            "Chamber Of Wind",
             "Crocomire's Energy Station",
             "Crocomire's Lair",
             "Equipment Locker",
@@ -422,9 +422,18 @@ _possible_places_area = {
         ]),
         Items.GravityBoots: frozenset([
             "Ocean Shore: Bottom",
-            "Ocean Shore: Top",
             "Subterranean Burrow",
             "Loading Dock Storage Area",
+            # can be in these spaceport locations AFTER falling from spaceport
+            "Aft Battery",
+            "Forward Battery",
+            "Docking Port 3",
+            "Docking Port 4",
+            "Gantry",
+            "Ready Room",
+            "Torpedo Bay",
+            "Weapon Locker",
+            "Extract Storage",
         ])
     },
     "medium": {
@@ -444,6 +453,7 @@ _possible_places_area = {
             "Colosseum",
             "Depressurization Valve",
             "Antelier",
+            "Chamber Of Wind",
             "Crocomire's Energy Station",
             "Crocomire's Lair",
             "Equipment Locker",
@@ -469,9 +479,18 @@ _possible_places_area = {
         ]),
         Items.GravityBoots: frozenset([
             "Ocean Shore: Bottom",
-            "Ocean Shore: Top",
             "Subterranean Burrow",
             "Loading Dock Storage Area",
+            # can be in these spaceport locations AFTER falling from spaceport
+            "Aft Battery",
+            "Forward Battery",
+            "Docking Port 3",
+            "Docking Port 4",
+            "Gantry",
+            "Ready Room",
+            "Torpedo Bay",
+            "Weapon Locker",
+            "Extract Storage",
         ])
     },
     "casual": {
@@ -518,6 +537,16 @@ _possible_places_area = {
             "Ocean Shore: Bottom",
             "Subterranean Burrow",
             "Loading Dock Storage Area",
+            # can be in these spaceport locations AFTER falling from spaceport
+            "Aft Battery",
+            "Forward Battery",
+            "Docking Port 3",
+            "Docking Port 4",
+            "Gantry",
+            "Ready Room",
+            "Torpedo Bay",
+            "Weapon Locker",
+            "Extract Storage",
         ])
     },
 }
@@ -601,7 +630,7 @@ _no_bombing = frozenset([
     "Vulnar Caves Entrance",
     "Warrior Shrine: Bottom",
     "Warrior Shrine: Top",
-    "Warrior Shrine: Middle",
+    # "Warrior Shrine: Middle",
     "West Spore Field",
     "Colosseum",
     "Magma Lake Cache",
@@ -677,8 +706,8 @@ def test_no_bombing_locations(logic: frozenset[Trick]) -> None:
     for loc_name in _no_bombing:
         assert (
             found[loc_name] or
-            (logic is casual and loc_name == "Warrior Shrine: Top") or
-            (logic in {casual, medium} and loc_name == "Warrior Shrine: Middle")
+            (logic is casual and loc_name == "Warrior Shrine: Top")  # or
+            # (logic in {casual, medium} and loc_name == "Warrior Shrine: Middle")
         ), f"logic thinks bombing is needed for {loc_name}"
 
 
@@ -787,6 +816,110 @@ def test_no_bomb_blocks(logic: frozenset[Trick]) -> None:
             assert found[loc_name], f"expert logic thinks bomb blocks are needed for {loc_name}"
 
 
+_no_bomb_blocks_or_speed = frozenset([
+    "Aft Battery",
+    "Docking Port 3",
+    "Docking Port 4",
+    "Forward Battery",
+    "Gantry",
+    "Ready Room",
+    "Torpedo Bay",
+    "Weapon Locker",
+    "Eddy Channels",
+    "Impact Crater",
+    "Ocean Shore: Bottom",
+    "Ocean Shore: Top",
+    "Ocean Vent Supply Depot",
+    "Sandy Burrow: Bottom",
+    "Sandy Cache",
+    "Sandy Gully",
+    "Sediment Floor",
+    "Sediment Flow",
+    "Shrine Of The Penumbra",
+    "Submarine Alcove",
+    "Submarine Nest",
+    "Subterranean Burrow",
+    "Archives: Front",
+    "Arena",
+    "Grand Vault",
+    "Hall Of The Elders",
+    "Monitoring Station",
+    "Sensor Maintenance: Top",
+    "Trophobiotic Chamber",
+    "Vulnar Caves Entrance",
+    "Warrior Shrine: Bottom",
+    "Mining Cache",
+])
+
+
+_no_bomb_blocks_or_speed_expert = frozenset([
+    "Mezzanine Concourse",
+    "West Spore Field",
+
+    # all of this group enabled by getting through causeway without (bombs, pbs, screw, speed)
+    "Antelier",
+    "Briar: Bottom",
+    "Containment Area",
+    "Equipment Locker",
+    "Foundry",
+    "Hydrodynamic Chamber",
+    "Loading Dock Storage Area",
+    "Norak Escarpment",
+    "Restricted Area",
+    "Shrine Of Fervor",
+    "Weapon Research",
+
+    "Drawing Room",
+    "Glacier's Reach",
+    "Grand Promenade",
+    "Ice Cave",
+    "Reliquary Access",
+    "Syzygy Observatorium",
+])
+
+
+@pytest.mark.parametrize("logic", (casual, medium, expert))
+def test_no_bomb_blocks_or_speed(logic: frozenset[Trick]) -> None:
+    """ no bombs or PBs or Screw Attack or speed """
+    game, loadout = setup(logic)
+
+    for item in items_unpackable:
+        if item not in {Items.Bombs, Items.PowerBomb, Items.Screw, Items.SpeedBooster, Items.spaceDrop}:
+            loadout.append(item)
+
+    # some of the non-unique that can help in logic
+    for _ in range(12):
+        loadout.append(Items.Energy)
+        loadout.append(Items.LargeAmmo)
+    loadout.append(Items.SpaceJumpBoost)
+
+    found: dict[str, bool] = defaultdict(bool)
+
+    def this_loadout() -> None:
+        updateLogic(game.all_locations.values(), loadout)
+
+        for loc_name, loc in game.all_locations.items():
+            if loc["inlogic"]:
+                found[loc_name] = True
+                assert loc_name in _no_bomb_blocks_or_speed or (
+                    logic is expert and loc_name in _no_bomb_blocks_or_speed_expert
+                ), f"logic thinks no bomb/speed blocks are needed for {loc_name}"
+                print(loc_name)
+
+    this_loadout()
+    print(" -- space drop")
+    loadout.append(SunkenNestL)
+    loadout.append(Items.spaceDrop)
+    this_loadout()
+
+    for loc_name in _no_bomb_blocks_or_speed:
+        assert found[loc_name], f"logic thinks bomb/speed blocks are needed for {loc_name}"
+
+    if logic is expert:
+        for loc_name in _no_bomb_blocks_or_speed_expert:
+            assert found[loc_name], f"expert logic thinks bomb/speed blocks are needed for {loc_name}"
+
+
 # TODO: places that I can go with no bombs, pbs, or screw (doesn't include colosseum)
 # places that I can go with screw, no bombs, pbs (includes colosseum)
 
@@ -806,4 +939,4 @@ def test_no_bomb_blocks(logic: frozenset[Trick]) -> None:
 
 if __name__ == "__main__":
     # test_hard_required_items()
-    test_no_bomb_blocks(medium)
+    test_no_bomb_blocks_or_speed(expert)

@@ -28,6 +28,7 @@ import areaRando
 from romWriter import RomWriter
 from solver import hard_required_locations, required_tricks, solve, spoil_play_through
 from spaceport_door_data import shrink_spaceport, spaceport_doors
+from terrain_patch import subterranean
 from trick import Trick
 from trick_data import Tricks
 from goal import GenerateGoals
@@ -140,9 +141,9 @@ def Main(argv: list[str]) -> None:
     area_rando = False
     if workingArgs.area:
         area_rando = True
-        if fillChoice == "MM":
-            fillChoice = "D"
-            print("Cannot use Major-Minor in Area rando currently. Using assumed fill instead.")
+        # if fillChoice == "MM":
+        #     fillChoice = "D"
+        #     print("Cannot use Major-Minor in Area rando currently. Using assumed fill instead.")
 
     small_spaceport = False
     if workingArgs.smallspaceport:
@@ -198,7 +199,7 @@ def generate(options: GameOptions) -> Game:
         print("Starting randomization attempt:", randomizeAttempts)
         game.item_placement_spoiler = f"Starting randomization attempt: {randomizeAttempts}\n"
         # now start randomizing
-        if options.fill_choice in {"D", "B"}:
+        if options.fill_choice in {"D", "B", "MM"}:
             seedComplete = assumed_fill(game)
         else:
             seedComplete = forward_fill(game)
@@ -284,6 +285,34 @@ def write_rom(game: Game, romWriter: Optional[RomWriter] = None) -> str:
     #   use by writing 0x18 to the high byte of a gray door plm param, OR'ed with the low bit of the 9-low-bits id part
     romWriter.writeBytes(0x23e33, b"\x38\x38\x38\x38")  # set the carry bit (a lot)
 
+    # subterranean burrow terrain
+    romWriter.writeBytes(0x2f51c4, subterranean)
+    p_level_data = b'\xc4\xd1\xde'  # ded1c4
+    romWriter.writeBytes(0x7dac7, p_level_data)
+    romWriter.writeBytes(0x7daad, p_level_data)
+
+    # lower the water slightly in norak brook, to get up without aqua suit
+    # (because it's too easy to go down without thinking about it)
+    # This is the lower byte of "Base Y position"
+    # in the FX (18ea0) of the State Headers of Norak Brook (8be5)
+    romWriter.writeBytes(0x18ea2, b'\xbb')  # changed from a7
+
+    # rotate save files
+    romWriter.writeBytes(
+        0xff60,          # some empty space
+        b'\xad\x52\x09'  # lda $0952  # save slot
+        b'\xc9\x02\x00'  # cmp #$0002
+        b'\x30\x03'      # bmi 03
+        b'\xa9\xff\xff'  # lda #$ffff
+        b'\x1a'          # inc
+        b'\x8d\x52\x09'  # sta $0952
+        b'\x4c\x35\xef'  # jmp $ef35  # the place where 818000 originally jumped to
+    )
+    romWriter.writeBytes(
+        0x8000,          # save code
+        b'\x4c\x60\xff'  # jmp that code above  (changed from jmp $ef35)
+    )
+
     if game.options.small_spaceport:
         romWriter.writeBytes(0x106283, b'\x71\x01')  # zebetite health
         romWriter.writeBytes(0x204b3, b'\x08')  # fake zebetite hits taken
@@ -355,11 +384,24 @@ def assumed_fill(game: Game) -> bool:
     loadout = Loadout(game)
     fill_algorithm = fillAssumed.FillAssumed(game.connections)
 
-    if game.options.cypher_items == CypherItems.SmallAmmo:
+    if game.options.cypher_items == CypherItems.SmallAmmo and game.options.fill_choice != "MM":
         game.all_locations["Shrine Of The Animate Spark"]["item"] = Items.SmallAmmo
         game.all_locations["Enervation Chamber"]["item"] = Items.SmallAmmo
         fill_algorithm.extra_items.remove(Items.SmallAmmo)
         fill_algorithm.extra_items.remove(Items.SmallAmmo)
+        game.item_placement_spoiler += f"Shrine Of The Animate Spark - - - {Items.SmallAmmo[0]}\n"
+        game.item_placement_spoiler += f"Enervation Chamber - - - {Items.SmallAmmo[0]}\n"
+
+    if game.options.fill_choice == "MM":  # major/minor
+        first, second = Items.Missile, Items.GravityBoots
+        if Tricks.wave_gate_glitch in game.options.logic and random.random() < 0.5:
+            first, second = second, first
+        game.all_locations["Torpedo Bay"]["item"] = first
+        game.all_locations["Subterranean Burrow"]["item"] = second
+        fill_algorithm.prog_items.remove(first)
+        fill_algorithm.prog_items.remove(second)
+        game.item_placement_spoiler += f"Torpedo Bay - - - {first[0]}\n"
+        game.item_placement_spoiler += f"Subterranean Burrow - - - {second[0]}\n"
 
     n_items_to_place = fill_algorithm.count_items_remaining()
     assert n_items_to_place <= len(game.all_locations), \
